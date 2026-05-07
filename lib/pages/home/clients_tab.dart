@@ -392,6 +392,8 @@ class _ClientCard extends StatelessWidget {
                               children: [
                                 Text(
                                   client.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: inkColor,
                                     fontWeight: FontWeight.w800,
@@ -400,16 +402,26 @@ class _ClientCard extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  client.trainingProgram,
-                                  style: const TextStyle(color: mutedColor),
+                                  client.goal,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: inkColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Weight ${client.weightKg.toStringAsFixed(1)} kg | BMI ${client.bmiLabel}',
+                                  client.schedule.trim().isEmpty
+                                      ? 'Schedule not set'
+                                      : client.schedule,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: mutedColor,
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 const SizedBox(height: space1),

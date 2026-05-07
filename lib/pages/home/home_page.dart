@@ -91,13 +91,14 @@ class _HomePageState extends State<HomePage> {
           return [
             SliverAppBar(
               pinned: true,
-              expandedHeight: 132,
-              stretch: true,
+              expandedHeight: 104,
+              stretch: false,
               backgroundColor: const Color(0xFF101827),
+              toolbarHeight: 58,
               flexibleSpace: FlexibleSpaceBar(
                 titlePadding: const EdgeInsetsDirectional.only(
                   start: space2,
-                  bottom: 14,
+                  bottom: 12,
                 ),
                 title: Text(
                   titles[_selectedIndex],

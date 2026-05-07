@@ -21,17 +21,17 @@ class _EditClientPageState extends State<EditClientPage> {
   final _goalController = TextEditingController();
   final _notesController = TextEditingController();
   Client? _client;
-  
+
   String? _selectedGoal;
-  String? _scheduleDate;
-  String? _scheduleTime;
-  
+  List<String> _selectedDays = [];
+  TimeOfDay? _scheduleTime;
+
   static const List<String> goalOptions = [
     'Weight gain',
     'Weight loss',
     'Muscle gain',
     'Muscle loss',
-    'Others - please specify'
+    'Others - please specify',
   ];
 
   void _loadClient() {
@@ -41,34 +41,36 @@ class _EditClientPageState extends State<EditClientPage> {
       _emailController.text = _client!.email;
       _phoneController.text = _client!.phone;
       _notesController.text = _client!.notes;
-      
-      // Parse goal
+
       if (_client!.goal.startsWith('Others:')) {
         _selectedGoal = 'Others - please specify';
         _goalController.text = _client!.goal.replaceFirst('Others: ', '');
       } else {
-        _selectedGoal = _client!.goal;
+        _selectedGoal = goalOptions.contains(_client!.goal)
+            ? _client!.goal
+            : 'Others - please specify';
+        if (_selectedGoal == 'Others - please specify') {
+          _goalController.text = _client!.goal;
+        }
       }
-      
-      // Parse schedule date and time
-      if (_client!.schedule.contains(' at ')) {
-        final parts = _client!.schedule.split(' at ');
-        _scheduleDate = parts[0];
-        _scheduleTime = parts[1];
-      }
+
+      _selectedDays = _client!.schedule.split(' at ').first.split(' / ').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      _scheduleTime = parseScheduleTime(_client!.schedule);
     }
   }
 
   void _saveClient() {
-    if (!_formKey.currentState!.validate() || _client == null || _selectedGoal == null) return;
+    if (!_formKey.currentState!.validate() ||
+        _client == null ||
+        _selectedGoal == null) {
+      return;
+    }
 
     final goal = _selectedGoal == 'Others - please specify'
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
-    final schedule = _scheduleDate != null && _scheduleTime != null
-        ? '$_scheduleDate at $_scheduleTime'
-        : '';
+    final schedule = _selectedDays.isEmpty ? '' : _selectedDays.join(' / ') + (_scheduleTime != null ? ' at ${_scheduleTime!.format(context)}' : '');
 
     final updated = _client!.copyWith(
       name: _nameController.text.trim(),
@@ -140,10 +142,7 @@ class _EditClientPageState extends State<EditClientPage> {
       appBar: AppBar(
         title: const Text('Edit Client'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _deleteClient,
-          ),
+          IconButton(icon: const Icon(Icons.delete), onPressed: _deleteClient),
         ],
       ),
       body: Padding(
@@ -174,7 +173,7 @@ class _EditClientPageState extends State<EditClientPage> {
               ),
               clientFieldGap,
               DropdownButtonFormField<String>(
-                value: _selectedGoal,
+                initialValue: _selectedGoal,
                 items: goalOptions.map((goal) {
                   return DropdownMenuItem(value: goal, child: Text(goal));
                 }).toList(),
@@ -188,68 +187,61 @@ class _EditClientPageState extends State<EditClientPage> {
                   children: [
                     TextFormField(
                       controller: _goalController,
-                      decoration: const InputDecoration(labelText: 'Specify your goal'),
-                      validator: (value) => requiredField(value, 'Please specify your goal'),
+                      decoration: const InputDecoration(
+                        labelText: 'Specify your goal',
+                      ),
+                      validator: (value) =>
+                          requiredField(value, 'Please specify your goal'),
                     ),
                     clientFieldGap,
                   ],
                 ),
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _scheduleDate != null 
-                        ? DateTime.parse(_scheduleDate!.replaceAll('/', '-').split('-').reversed.join('-'))
-                        : DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
+              const Text('Schedule Days', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
+                  return FilterChip(
+                    label: Text(day),
+                    selected: _selectedDays.contains(day),
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedDays.add(day);
+                        } else {
+                          _selectedDays.remove(day);
+                        }
+                      });
+                    },
                   );
-                  if (picked != null) {
-                    setState(() {
-                      _scheduleDate = '${picked.month}/${picked.day}/${picked.year}';
-                    });
-                  }
-                },
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: 'Schedule Date',
-                    suffixIcon: const Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(_scheduleDate ?? 'Select date'),
-                ),
+                }).toList(),
               ),
-              clientFieldGap,
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showTimePicker(
-                    context: context,
-                    initialTime: _scheduleTime != null 
-                        ? TimeOfDay(
-                            hour: int.parse(_scheduleTime!.split(':')[0]),
-                            minute: int.parse(_scheduleTime!.split(':')[1].split(' ')[0]),
-                          )
-                        : TimeOfDay.now(),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _scheduleTime = picked.format(context);
-                    });
-                  }
-                },
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: 'Schedule Time',
-                    suffixIcon: const Icon(Icons.access_time),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+              if (_selectedDays.isNotEmpty) ...[
+                clientFieldGap,
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: _scheduleTime ?? TimeOfDay.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _scheduleTime = picked;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Schedule Time',
+                      suffixIcon: const Icon(Icons.access_time),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
+                    child: Text(_scheduleTime?.format(context) ?? 'Select time'),
                   ),
-                  child: Text(_scheduleTime ?? 'Select time'),
                 ),
-              ),
+              ],
               clientFieldGap,
               TextFormField(
                 controller: _notesController,

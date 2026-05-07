@@ -56,11 +56,21 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
             pinned: true,
             floating: false,
             stretch: false,
-            expandedHeight: 180,
+            expandedHeight: 150,
+            collapsedHeight: 60,
+            toolbarHeight: 60,
+            leading: const BackButton(color: Colors.white),
+            leadingWidth: 72,
+            titleSpacing: 20,
             backgroundColor: clientPageAppBarColor,
-            title: const Text('Client Profile'),
-            automaticallyImplyLeading: true,
+            title: const Text(
+              'Client Profile',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
+              expandedTitleScale: 1,
               background: DecoratedBox(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -74,10 +84,16 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
                   ),
                 ),
                 child: SafeArea(
+                  top: false,
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: Padding(
-                      padding: const EdgeInsets.all(space2),
+                      padding: const EdgeInsets.fromLTRB(
+                        space2,
+                        42,
+                        space2,
+                        12,
+                      ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: BackdropFilter(

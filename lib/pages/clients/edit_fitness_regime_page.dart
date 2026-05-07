@@ -15,7 +15,6 @@ class EditFitnessRegimePage extends StatefulWidget {
 
 class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   final _formKey = GlobalKey<FormState>();
-  final _programController = TextEditingController();
   final _scheduleController = TextEditingController();
   final _regimeController = TextEditingController();
   final _cardioController = TextEditingController();
@@ -24,7 +23,6 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   void _loadClient() {
     _client = ClientRepository.instance.getById(widget.clientId);
     if (_client != null) {
-      _programController.text = _client!.trainingProgram;
       _scheduleController.text = _client!.schedule;
       _regimeController.text = _client!.fitnessRegime;
       _cardioController.text = _client!.cardioPlan;
@@ -35,7 +33,6 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
     if (!_formKey.currentState!.validate() || _client == null) return;
 
     final updated = _client!.copyWith(
-      trainingProgram: _programController.text.trim(),
       schedule: _scheduleController.text.trim(),
       fitnessRegime: _regimeController.text.trim(),
       cardioPlan: _cardioController.text.trim(),
@@ -53,7 +50,6 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
 
   @override
   void dispose() {
-    _programController.dispose();
     _scheduleController.dispose();
     _regimeController.dispose();
     _cardioController.dispose();
@@ -76,15 +72,6 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
-              controller: _programController,
-              decoration: const InputDecoration(
-                labelText: 'Program name',
-                prefixIcon: Icon(Icons.assignment_outlined),
-              ),
-              validator: (value) => requiredField(value, 'Enter a program'),
-            ),
-            clientFieldGap,
             TextFormField(
               controller: _scheduleController,
               decoration: const InputDecoration(

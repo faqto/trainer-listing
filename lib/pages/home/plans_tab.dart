@@ -106,6 +106,8 @@ class _PlanCard extends StatelessWidget {
                       children: [
                         Text(
                           client.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: inkColor,
                             fontSize: 16,
@@ -115,9 +117,12 @@ class _PlanCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           client.goal,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: mutedColor,
                             fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -129,6 +134,7 @@ class _PlanCard extends StatelessWidget {
               const SizedBox(height: 14),
               _PlanLine(
                 icon: Icons.event_available_outlined,
+                label: 'Schedule',
                 text: client.schedule.isEmpty
                     ? 'Schedule not set'
                     : client.schedule,
@@ -136,6 +142,7 @@ class _PlanCard extends StatelessWidget {
               const SizedBox(height: 8),
               _PlanLine(
                 icon: Icons.list_alt,
+                label: 'Workout',
                 text: client.fitnessRegime.isEmpty
                     ? 'Workout regime not set'
                     : client.fitnessRegime,
@@ -143,6 +150,7 @@ class _PlanCard extends StatelessWidget {
               const SizedBox(height: 8),
               _PlanLine(
                 icon: Icons.directions_run,
+                label: 'Cardio',
                 text: client.cardioPlan.isEmpty
                     ? 'Cardio plan not set'
                     : client.cardioPlan,
@@ -157,9 +165,14 @@ class _PlanCard extends StatelessWidget {
 
 class _PlanLine extends StatelessWidget {
   final IconData icon;
+  final String label;
   final String text;
 
-  const _PlanLine({required this.icon, required this.text});
+  const _PlanLine({
+    required this.icon,
+    required this.label,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -169,16 +182,31 @@ class _PlanLine extends StatelessWidget {
         Icon(icon, size: 18, color: mutedColor),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            text,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: inkColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              height: 1.4,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  color: mutedColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: inkColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+            ],
           ),
         ),
       ],

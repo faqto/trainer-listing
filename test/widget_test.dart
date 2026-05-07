@@ -45,14 +45,10 @@ void main() {
       find.widgetWithText(TextFormField, 'Email'),
       'jordan@example.com',
     );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Goal'),
-      'Improve mobility',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Program'),
-      'Mobility',
-    );
+    await tester.tap(find.text('Training Goal'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Muscle gain').last);
+    await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Save'));
     await tester.tap(find.text('Save'));
@@ -75,16 +71,12 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.assignment));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('General Fitness'));
+    await tester.tap(find.text('Sarah Jenkins'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(TextButton, 'Edit'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Program name'),
-      'Hypertrophy Base',
-    );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Strength / workout regime'),
       'Push, pull, legs with progressive overload.',
@@ -97,7 +89,6 @@ void main() {
     await tester.tap(find.text('Save Regime'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Hypertrophy Base'), findsAtLeastNWidgets(1));
     expect(
       find.text('Push, pull, legs with progressive overload.'),
       findsOneWidget,

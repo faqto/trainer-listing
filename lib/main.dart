@@ -19,3 +19,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+//added main.dart file to run the app and set up routing

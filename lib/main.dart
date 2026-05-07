@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/pages/auth/login_page.dart';
-import 'package:trainer_listing/pages/auth/register_page.dart';
-import 'package:trainer_listing/pages/clients/clients_list_page.dart';
-import 'package:trainer_listing/pages/home/home_page.dart';
+
+import 'routes/app_routes.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,13 +14,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FitEd Trainer',
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
-        '/home': (context) => const HomePage(),
-        '/clients': (context) => const ClientsListPage(),
-      },
+      initialRoute: AppRoutes.login,
+      routes: AppRoutes.routes,
     );
   }
 }

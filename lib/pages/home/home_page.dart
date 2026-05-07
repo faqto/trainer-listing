@@ -2,33 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../../routes/app_routes.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('FitEd Trainer'), centerTitle: true),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Clients'),
-              onTap: () {
-                Navigator.pushNamed(context, AppRoutes.clients);
-              },
-            ),
-          ],
-        ),
-      ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -38,12 +26,16 @@ class HomePage extends StatelessWidget {
               'Welcome Trainer 👋',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 10),
+
             const Text(
               'Manage your clients and track their fitness progress.',
               style: TextStyle(fontSize: 16),
             ),
+
             const SizedBox(height: 30),
+
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -57,6 +49,7 @@ class HomePage extends StatelessWidget {
                       Navigator.pushNamed(context, AppRoutes.clients);
                     },
                   ),
+
                   HomeCard(
                     title: 'Add Client',
                     icon: Icons.person_add,
@@ -85,6 +78,30 @@ class HomePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+
+        onTap: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+
+          if (index == 0) {
+            Navigator.pushNamed(context, AppRoutes.home);
+          }
+
+          if (index == 1) {
+            Navigator.pushNamed(context, AppRoutes.clients);
+          }
+        },
+
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Clients'),
+        ],
       ),
     );
   }
@@ -116,7 +133,9 @@ class HomeCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 50),
+
             const SizedBox(height: 10),
+
             Text(
               title,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

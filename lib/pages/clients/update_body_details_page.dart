@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
+import 'client_page_helpers.dart';
 
 class UpdateBodyDetailsPage extends StatefulWidget {
   final String clientId;
@@ -20,6 +21,7 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
   final _waistController = TextEditingController();
   final _hipsController = TextEditingController();
   final _chestController = TextEditingController();
+  final _noteController = TextEditingController();
   Client? _client;
 
   void _loadClient() {
@@ -34,20 +36,27 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
     }
   }
 
-  double _parseDouble(String value) {
-    return double.tryParse(value.replaceAll(',', '.')) ?? 0;
-  }
-
   void _saveMetrics() {
     if (!_formKey.currentState!.validate() || _client == null) return;
 
+    final progressEntry = ProgressEntry(
+      weightKg: parseMetric(_weightController.text),
+      heightCm: parseMetric(_heightController.text),
+      bodyFatPercent: parseMetric(_bodyFatController.text),
+      waistCm: parseMetric(_waistController.text),
+      hipsCm: parseMetric(_hipsController.text),
+      chestCm: parseMetric(_chestController.text),
+      note: _noteController.text.trim(),
+    );
+
     final updated = _client!.copyWith(
-      weightKg: _parseDouble(_weightController.text),
-      heightCm: _parseDouble(_heightController.text),
-      bodyFatPercent: _parseDouble(_bodyFatController.text),
-      waistCm: _parseDouble(_waistController.text),
-      hipsCm: _parseDouble(_hipsController.text),
-      chestCm: _parseDouble(_chestController.text),
+      weightKg: progressEntry.weightKg,
+      heightCm: progressEntry.heightCm,
+      bodyFatPercent: progressEntry.bodyFatPercent,
+      waistCm: progressEntry.waistCm,
+      hipsCm: progressEntry.hipsCm,
+      chestCm: progressEntry.chestCm,
+      progressEntries: [..._client!.progressEntries, progressEntry],
     );
 
     ClientRepository.instance.updateClient(updated);
@@ -68,6 +77,7 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
     _waistController.dispose();
     _hipsController.dispose();
     _chestController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -92,38 +102,48 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
                 controller: _weightController,
                 decoration: const InputDecoration(labelText: 'Weight (kg)'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || value.isEmpty ? 'Enter weight' : null,
+                validator: (value) => requiredField(value, 'Enter weight'),
               ),
-              const SizedBox(height: 12),
+              clientFieldGap,
               TextFormField(
                 controller: _heightController,
                 decoration: const InputDecoration(labelText: 'Height (cm)'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || value.isEmpty ? 'Enter height' : null,
+                validator: (value) => requiredField(value, 'Enter height'),
               ),
-              const SizedBox(height: 12),
+              clientFieldGap,
               TextFormField(
                 controller: _bodyFatController,
                 decoration: const InputDecoration(labelText: 'Body fat %'),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
+              clientFieldGap,
               TextFormField(
                 controller: _waistController,
                 decoration: const InputDecoration(labelText: 'Waist (cm)'),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
+              clientFieldGap,
               TextFormField(
                 controller: _hipsController,
                 decoration: const InputDecoration(labelText: 'Hips (cm)'),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
+              clientFieldGap,
               TextFormField(
                 controller: _chestController,
                 decoration: const InputDecoration(labelText: 'Chest (cm)'),
                 keyboardType: TextInputType.number,
+              ),
+              clientFieldGap,
+              TextFormField(
+                controller: _noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Progress note',
+                  alignLabelWithHint: true,
+                ),
+                minLines: 2,
+                maxLines: 3,
               ),
               const SizedBox(height: 24),
               ElevatedButton(

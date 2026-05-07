@@ -32,13 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF13294B), Color(0xFF0A1B38)],
-          ),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFFF5F7FB)),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -46,17 +40,32 @@ class _RegisterPageState extends State<RegisterPage> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(18),
                 boxShadow: [
-                  BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.15), blurRadius: 16, offset: const Offset(0, 8)),
+                  BoxShadow(
+                    color: Color.fromRGBO(15, 23, 42, 0.06),
+                    blurRadius: 30,
+                    offset: const Offset(0, 14),
+                  ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Create account', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Create account',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  const Text('Set up your trainer profile and start adding clients.', style: TextStyle(color: Colors.black54)),
+                  const Text(
+                    'Set up your trainer profile and start adding clients.',
+                    style: TextStyle(color: Color(0xFF64748B)),
+                  ),
                   const SizedBox(height: 24),
                   Form(
                     key: _formKey,
@@ -64,40 +73,56 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         TextFormField(
                           controller: _nameController,
-                          decoration: const InputDecoration(labelText: 'Name'),
-                          validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                          ),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Please enter your name'
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _emailController,
-                          decoration: const InputDecoration(labelText: 'Email'),
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.mail_outline),
+                          ),
                           keyboardType: TextInputType.emailAddress,
-                          validator: (value) => value == null || value.isEmpty ? 'Please enter your email' : null,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Please enter your email'
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
-                          decoration: const InputDecoration(labelText: 'Password'),
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
                           obscureText: true,
-                          validator: (value) => value == null || value.isEmpty ? 'Please enter a password' : null,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Please enter a password'
+                              : null,
                         ),
                         const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _register,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF8C42),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: const Text(
+                              'Register',
+                              style: TextStyle(fontSize: 16),
                             ),
-                            child: const Text('Register', style: TextStyle(fontSize: 16, color: Colors.white)),
                           ),
                         ),
                         const SizedBox(height: 16),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.login);
+                            Navigator.pushReplacementNamed(
+                              context,
+                              AppRoutes.login,
+                            );
                           },
                           child: const Text('Already have an account? Login'),
                         ),

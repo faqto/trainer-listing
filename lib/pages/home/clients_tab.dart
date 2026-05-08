@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 
+import '../../helpers/client_metrics.dart';
 import '../../models/client_model.dart';
+import '../../widgets/home/client_card.dart';
+import '../../widgets/home/client_list_shimmer.dart';
+import '../../widgets/home/filter_dropdown.dart';
+import '../../widgets/home/pressable_scale.dart';
 import 'home_constants.dart';
-import 'home_models.dart';
 
 class ClientsTab extends StatefulWidget {
   final List<Client> clients;
@@ -69,9 +72,9 @@ class _ClientsTabState extends State<ClientsTab> {
           (_statusFilter == 'Needs plan' && client.fitnessRegime.isEmpty);
       final matchesProgress =
           _progressFilter == 'All progress' ||
-          (_progressFilter == 'Weight loss' && _weightChange(client) < -0.1) ||
-          (_progressFilter == 'Weight gain' && _weightChange(client) > 0.1) ||
-          (_progressFilter == 'Stable' && _weightChange(client).abs() <= 0.1);
+          (_progressFilter == 'Weight loss' && weightChange(client) < -0.1) ||
+          (_progressFilter == 'Weight gain' && weightChange(client) > 0.1) ||
+          (_progressFilter == 'Stable' && weightChange(client).abs() <= 0.1);
 
       return matchesSearch &&
           matchesSchedule &&
@@ -137,19 +140,19 @@ class _ClientsTabState extends State<ClientsTab> {
               physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               children: [
-                _FilterDropdown(
+                FilterDropdown(
                   value: _scheduleFilter,
                   defaultValue: 'All schedules',
                   values: scheduleOptions,
                   onChanged: (value) => setState(() => _scheduleFilter = value),
                 ),
-                _FilterDropdown(
+                FilterDropdown(
                   value: _statusFilter,
                   defaultValue: 'All statuses',
                   values: const ['All statuses', 'With plan', 'Needs plan'],
                   onChanged: (value) => setState(() => _statusFilter = value),
                 ),
-                _FilterDropdown(
+                FilterDropdown(
                   value: _progressFilter,
                   defaultValue: 'All progress',
                   values: const [
@@ -166,7 +169,7 @@ class _ClientsTabState extends State<ClientsTab> {
           const SizedBox(height: space2),
           Expanded(
             child: _isLoading
-                ? const _ClientListShimmer()
+                ? const ClientListShimmer()
                 : filtered.isEmpty
                 ? const Center(child: Text('No matching clients.'))
                 : ListView.separated(
@@ -176,7 +179,7 @@ class _ClientsTabState extends State<ClientsTab> {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final client = filtered[index];
-                      return _ClientCard(
+                      return ClientCard(
                         client: client,
                         index: index,
                         onOpenClient: widget.onOpenClient,
@@ -185,379 +188,6 @@ class _ClientsTabState extends State<ClientsTab> {
                   ),
           ),
         ],
-      ),
-    );
-  }
-
-  double _weightChange(Client client) {
-    if (client.progressEntries.length < 2) return 0;
-
-    final sorted = [...client.progressEntries]
-      ..sort((a, b) => a.date.compareTo(b.date));
-    return sorted.last.weightKg - sorted.first.weightKg;
-  }
-}
-
-class _FilterDropdown extends StatelessWidget {
-  final String value;
-  final String defaultValue;
-  final List<String> values;
-  final ValueChanged<String> onChanged;
-
-  const _FilterDropdown({
-    required this.value,
-    required this.defaultValue,
-    required this.values,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final active = value != defaultValue;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      margin: const EdgeInsets.only(right: space1),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      constraints: const BoxConstraints(minWidth: 150),
-      decoration: BoxDecoration(
-        color: active ? primaryColor : Colors.white.withAlpha(230),
-        border: Border.all(color: active ? primaryColor : cardBorderColor),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: active ? premiumCardShadows : null,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: values.contains(value) ? value : defaultValue,
-          dropdownColor: Colors.white,
-          icon: Icon(
-            Icons.keyboard_arrow_down,
-            color: active ? Colors.white : mutedColor,
-          ),
-          isDense: true,
-          selectedItemBuilder: (context) {
-            return values.map((item) {
-              return Text(
-                item,
-                style: TextStyle(
-                  color: active ? Colors.white : inkColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              );
-            }).toList();
-          },
-          items: values
-              .map(
-                (item) => DropdownMenuItem(
-                  value: item,
-                  child: AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 180),
-                    style: TextStyle(
-                      color: item == value && active ? primaryColor : inkColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    child: Text(item),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value != null) onChanged(value);
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _ClientCard extends StatelessWidget {
-  final Client client;
-  final int index;
-  final ValueChanged<String> onOpenClient;
-
-  const _ClientCard({
-    required this.client,
-    required this.index,
-    required this.onOpenClient,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: 300 + (index * 70).clamp(0, 360)),
-      curve: Curves.easeOutCubic,
-      tween: Tween(begin: 0, end: 1),
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 26 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: PressableScale(
-        onTap: () => onOpenClient(client.id),
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: cardBorderColor),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: premiumCardShadows,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          primaryColor.withAlpha(28),
-                          tealColor.withAlpha(20),
-                          Colors.white,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(28),
-                    ),
-                    child: Container(
-                      height: 72,
-                      width: 116,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            primaryColor.withAlpha(210),
-                            tealColor.withAlpha(195),
-                          ],
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withAlpha(54),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Center(
-                            child: Icon(
-                              Icons.fitness_center,
-                              color: Colors.white70,
-                              size: 34,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(space2),
-                  child: Row(
-                    children: [
-                      Hero(
-                        tag: 'client-avatar-${client.id}',
-                        child: CircleAvatar(
-                          radius: 28,
-                          backgroundColor: primaryColor,
-                          child: Text(
-                            client.name.isEmpty ? '?' : client.name[0],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: space2),
-                      Expanded(
-                        child: Hero(
-                          tag: 'client-title-${client.id}',
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  client.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: inkColor,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 17,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  client.goal,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: inkColor,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  client.schedule.trim().isEmpty
-                                      ? 'Schedule not set'
-                                      : client.schedule,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: mutedColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: space1),
-                                Wrap(
-                                  spacing: space1,
-                                  runSpacing: space1,
-                                  children: [
-                                    _StatusBadge(
-                                      label: client.gender,
-                                      color: primaryColor,
-                                    ),
-                                    _StatusBadge(
-                                      label: '${client.age} yrs',
-                                      color: amberColor,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 18,
-                        color: Colors.black26,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class PressableScale extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  final BorderRadius borderRadius;
-
-  const PressableScale({
-    super.key,
-    required this.child,
-    required this.onTap,
-    required this.borderRadius,
-  });
-
-  @override
-  State<PressableScale> createState() => _PressableScaleState();
-}
-
-class _PressableScaleState extends State<PressableScale> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale: _pressed ? 0.98 : 1,
-      duration: const Duration(milliseconds: 110),
-      curve: Curves.easeOut,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
-          onHighlightChanged: (value) => setState(() => _pressed = value),
-          borderRadius: widget.borderRadius,
-          splashColor: primaryColor.withAlpha(26),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-class _ClientListShimmer extends StatelessWidget {
-  const _ClientListShimmer();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(space2, 0, space2, 104),
-      itemCount: 4,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        return Shimmer.fromColors(
-          baseColor: const Color(0xFFE2E8F0),
-          highlightColor: Colors.white,
-          child: Container(
-            height: 136,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusBadge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withAlpha((0.14 * 255).round()),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color.darken(),
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }

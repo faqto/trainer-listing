@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import '../../helpers/firebase_error_messages.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import 'client_page_helpers.dart';
+import '../../widgets/add client page/add_client_basic_info_section.dart';
+import '../../widgets/add client page/add_client_training_info_section.dart';
+import '../../helpers/client_page_helpers.dart';
 
 class AddClientPage extends StatefulWidget {
   const AddClientPage({super.key});
@@ -32,7 +35,7 @@ class _AddClientPageState extends State<AddClientPage> {
     'Weight loss',
     'Muscle gain',
     'Muscle loss',
-    'Others - please specify',
+    otherGoalOption,
   ];
 
   Future<void> _saveClient() async {
@@ -54,7 +57,7 @@ class _AddClientPageState extends State<AddClientPage> {
       return;
     }
 
-    final goal = _selectedGoal == 'Others - please specify'
+    final goal = _selectedGoal == otherGoalOption
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
@@ -87,7 +90,7 @@ class _AddClientPageState extends State<AddClientPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_firebaseSaveErrorMessage(error))));
+      ).showSnackBar(SnackBar(content: Text(clientSaveErrorMessage(error))));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -99,19 +102,6 @@ class _AddClientPageState extends State<AddClientPage> {
           _isSaving = false;
         });
       }
-    }
-  }
-
-  String _firebaseSaveErrorMessage(FirebaseException error) {
-    switch (error.code) {
-      case 'permission-denied':
-        return 'Firestore blocked this save. Check your database rules.';
-      case 'unavailable':
-        return 'Firestore is unavailable right now. Check your connection.';
-      case 'not-found':
-        return 'Firestore database was not found for this Firebase project.';
-      default:
-        return error.message ?? 'Unable to save client. Please try again.';
     }
   }
 
@@ -140,140 +130,30 @@ class _AddClientPageState extends State<AddClientPage> {
           key: _formKey,
           child: Column(
             children: [
-              ClientSectionCard(
-                padding: const EdgeInsets.all(18),
-                children: [
-                  const ClientSectionTitle('Basic Info'),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Full Name'),
-                    validator: (value) => requiredField(value, 'Enter name'),
-                  ),
-                  clientFieldGap,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _ageController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Age'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _genderController,
-                          decoration: const InputDecoration(
-                            labelText: 'Gender',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  clientFieldGap,
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) => requiredField(value, 'Enter email'),
-                  ),
-                  clientFieldGap,
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: const InputDecoration(labelText: 'Phone'),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 24),
-                  const ClientSectionTitle('Training Info'),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedGoal,
-                    items: goalOptions.map((goal) {
-                      return DropdownMenuItem(value: goal, child: Text(goal));
-                    }).toList(),
-                    onChanged: (value) => setState(() => _selectedGoal = value),
-                    decoration: const InputDecoration(
-                      labelText: 'Training Goal',
-                    ),
-                    validator: (value) =>
-                        value == null ? 'Select a goal' : null,
-                  ),
-                  clientFieldGap,
-                  if (_selectedGoal == 'Others - please specify')
-                    Column(
-                      children: [
-                        TextFormField(
-                          controller: _goalController,
-                          decoration: const InputDecoration(
-                            labelText: 'Specify your goal',
-                          ),
-                          validator: (value) =>
-                              requiredField(value, 'Please specify your goal'),
-                        ),
-                        clientFieldGap,
-                      ],
-                    ),
-                  const Text(
-                    'Schedule Days',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                        .map((day) {
-                          return FilterChip(
-                            label: Text(day),
-                            selected: _selectedDays.contains(day),
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedDays.add(day);
-                                } else {
-                                  _selectedDays.remove(day);
-                                  if (_selectedDays.isEmpty) {
-                                    _scheduleTime = null;
-                                    _scheduleError = null;
-                                  }
-                                }
-                              });
-                            },
-                          );
-                        })
-                        .toList(),
-                  ),
-                  if (_selectedDays.isNotEmpty) ...[
-                    clientFieldGap,
-                    GestureDetector(
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: _scheduleTime ?? TimeOfDay.now(),
-                        );
-                        if (picked != null && mounted) {
-                          setState(() {
-                            _scheduleTime = picked;
-                            _scheduleError = null;
-                          });
-                        }
-                      },
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Schedule Time',
-                          suffixIcon: const Icon(Icons.access_time),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          errorText: _scheduleError,
-                        ),
-                        child: Text(
-                          _scheduleTime?.format(context) ?? 'Select time',
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+              AddClientBasicInfoSection(
+                nameController: _nameController,
+                ageController: _ageController,
+                genderController: _genderController,
+                emailController: _emailController,
+                phoneController: _phoneController,
+              ),
+              const SizedBox(height: 16),
+              AddClientTrainingInfoSection(
+                goalOptions: goalOptions,
+                selectedGoal: _selectedGoal,
+                goalController: _goalController,
+                selectedDays: _selectedDays,
+                scheduleTime: _scheduleTime,
+                scheduleError: _scheduleError,
+                onGoalChanged: (value) => setState(() => _selectedGoal = value),
+                onDaysChanged: (days) => setState(() {
+                  _selectedDays
+                    ..clear()
+                    ..addAll(days);
+                }),
+                onTimeChanged: (time) => setState(() => _scheduleTime = time),
+                onErrorChanged: (error) =>
+                    setState(() => _scheduleError = error),
               ),
               const SizedBox(height: 24),
               ElevatedButton(

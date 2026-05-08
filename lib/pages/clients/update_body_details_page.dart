@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import 'client_page_helpers.dart';
+import '../../helpers/client_page_helpers.dart';
 
 class UpdateBodyDetailsPage extends StatefulWidget {
   final String clientId;

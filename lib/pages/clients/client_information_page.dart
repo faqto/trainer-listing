@@ -7,9 +7,11 @@ import '../../widgets/client_information_page/detail_block.dart';
 import '../../widgets/client_information_page/info_badge.dart';
 import '../../widgets/client_information_page/metric_row.dart';
 import '../../widgets/client_information_page/progress_entry_card.dart';
+import '../../widgets/client_section_card.dart';
+import '../../widgets/client_section_title.dart';
 import '../../widgets/client_sliver_app_bar.dart';
 import '../home/home_constants.dart';
-import 'client_page_helpers.dart';
+import '../../helpers/client_page_helpers.dart';
 
 class ClientInformationPage extends StatefulWidget {
   final String clientId;

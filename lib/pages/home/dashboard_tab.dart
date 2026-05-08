@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../helpers/client_metrics.dart';
 import '../../models/client_model.dart';
+import '../../models/home_activity.dart';
+import '../../widgets/home/activity_card.dart';
+import '../../widgets/home/dashboard_metric.dart';
+import '../../widgets/home/metric_divider.dart';
 import 'home_constants.dart';
-import 'home_models.dart';
 
 class DashboardTab extends StatelessWidget {
   final List<Client> clients;
@@ -20,9 +24,9 @@ class DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sessionsToday = clients.where(_hasSessionToday).length;
+    final sessionsToday = clients.where(hasSessionToday).length;
     final newClientsToday = clients
-        .where((client) => _isToday(client.joinDate))
+        .where((client) => isToday(client.joinDate))
         .length;
 
     return SingleChildScrollView(
@@ -86,25 +90,25 @@ class DashboardTab extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _DashboardMetric(
+                  child: DashboardMetric(
                     label: 'Clients',
                     value: clients.length.toString(),
                     color: primaryColor,
                     icon: Icons.people_alt_rounded,
                   ),
                 ),
-                const _MetricDivider(),
+                const MetricDivider(),
                 Expanded(
-                  child: _DashboardMetric(
+                  child: DashboardMetric(
                     label: 'Sessions',
                     value: sessionsToday.toString(),
                     color: tealColor,
                     icon: Icons.event_available_rounded,
                   ),
                 ),
-                const _MetricDivider(),
+                const MetricDivider(),
                 Expanded(
-                  child: _DashboardMetric(
+                  child: DashboardMetric(
                     label: 'New',
                     value: newClientsToday.toString(),
                     color: roseColor,
@@ -156,170 +160,10 @@ class DashboardTab extends StatelessWidget {
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: space1),
-                    child: _ActivityCard(activity: entry.$2),
+                    child: ActivityCard(activity: entry.$2),
                   ),
                 ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  bool _hasSessionToday(Client client) {
-    if (client.schedule.trim().isEmpty) return false;
-
-    final weekday = [
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat',
-      'Sun',
-    ][DateTime.now().weekday - 1];
-    return client.schedule.toLowerCase().contains(weekday.toLowerCase());
-  }
-
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-  }
-}
-
-class _DashboardMetric extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
-
-  const _DashboardMetric({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          height: 36,
-          width: 36,
-          decoration: BoxDecoration(
-            color: color.withAlpha((0.10 * 255).round()),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 19),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          value,
-          style: const TextStyle(
-            color: inkColor,
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            height: 1,
-          ),
-        ),
-        const SizedBox(height: 7),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: mutedColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MetricDivider extends StatelessWidget {
-  const _MetricDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 72,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: cardBorderColor,
-    );
-  }
-}
-
-class _ActivityCard extends StatelessWidget {
-  final HomeActivity activity;
-
-  const _ActivityCard({required this.activity});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: cardBorderColor),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: premiumCardShadows,
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            height: 48,
-            width: 48,
-            decoration: BoxDecoration(
-              color: activity.color.withAlpha((0.12 * 255).round()),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(activity.icon, color: activity.color, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        activity.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: inkColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      activity.time,
-                      style: const TextStyle(
-                        color: mutedColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  activity.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: mutedColor),
-                ),
-              ],
-            ),
           ),
         ],
       ),

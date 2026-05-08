@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import 'client_page_helpers.dart';
+import '../../widgets/client_schedule_picker.dart';
+import '../../helpers/client_page_helpers.dart';
 
 class EditFitnessRegimePage extends StatefulWidget {
   final String clientId;
@@ -88,63 +89,14 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
-              'Schedule Days',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            ClientSchedulePicker(
+              selectedDays: _selectedDays,
+              selectedTime: _scheduleTime,
+              errorText: _scheduleError,
+              onDaysChanged: (days) => setState(() => _selectedDays = days),
+              onTimeChanged: (time) => setState(() => _scheduleTime = time),
+              onErrorChanged: (error) => setState(() => _scheduleError = error),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((
-                day,
-              ) {
-                return FilterChip(
-                  label: Text(day),
-                  selected: _selectedDays.contains(day),
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedDays.add(day);
-                      } else {
-                        _selectedDays.remove(day);
-                        if (_selectedDays.isEmpty) {
-                          _scheduleTime = null;
-                          _scheduleError = null;
-                        }
-                      }
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-            if (_selectedDays.isNotEmpty) ...[
-              clientFieldGap,
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showTimePicker(
-                    context: context,
-                    initialTime: _scheduleTime ?? TimeOfDay.now(),
-                  );
-                  if (picked != null && mounted) {
-                    setState(() {
-                      _scheduleTime = picked;
-                      _scheduleError = null;
-                    });
-                  }
-                },
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: 'Schedule Time',
-                    suffixIcon: const Icon(Icons.access_time),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    errorText: _scheduleError,
-                  ),
-                  child: Text(_scheduleTime?.format(context) ?? 'Select time'),
-                ),
-              ),
-            ],
             clientFieldGap,
             TextFormField(
               controller: _regimeController,

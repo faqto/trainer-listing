@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import 'client_page_helpers.dart';
+import '../../widgets/edit client page/edit_client_form_fields.dart';
+import '../../helpers/client_page_helpers.dart';
 
 class EditClientPage extends StatefulWidget {
   final String clientId;
@@ -32,7 +33,7 @@ class _EditClientPageState extends State<EditClientPage> {
     'Weight loss',
     'Muscle gain',
     'Muscle loss',
-    'Others - please specify',
+    otherGoalOption,
   ];
 
   @override
@@ -51,13 +52,13 @@ class _EditClientPageState extends State<EditClientPage> {
       _notesController.text = _client!.notes;
 
       if (_client!.goal.startsWith('Others:')) {
-        _selectedGoal = 'Others - please specify';
+        _selectedGoal = otherGoalOption;
         _goalController.text = _client!.goal.replaceFirst('Others: ', '');
       } else {
         _selectedGoal = goalOptions.contains(_client!.goal)
             ? _client!.goal
-            : 'Others - please specify';
-        if (_selectedGoal == 'Others - please specify') {
+            : otherGoalOption;
+        if (_selectedGoal == otherGoalOption) {
           _goalController.text = _client!.goal;
         }
       }
@@ -82,7 +83,7 @@ class _EditClientPageState extends State<EditClientPage> {
       return;
     }
 
-    final goal = _selectedGoal == 'Others - please specify'
+    final goal = _selectedGoal == otherGoalOption
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
@@ -166,115 +167,22 @@ class _EditClientPageState extends State<EditClientPage> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                    requiredField(value, 'Please enter a name'),
-              ),
-              clientFieldGap,
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    requiredField(value, 'Please enter an email'),
-              ),
-              clientFieldGap,
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone'),
-                keyboardType: TextInputType.phone,
-              ),
-              clientFieldGap,
-              DropdownButtonFormField<String>(
-                initialValue: _selectedGoal,
-                items: goalOptions.map((goal) {
-                  return DropdownMenuItem(value: goal, child: Text(goal));
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedGoal = value),
-                decoration: const InputDecoration(labelText: 'Training Goal'),
-                validator: (value) => value == null ? 'Select a goal' : null,
-              ),
-              clientFieldGap,
-              if (_selectedGoal == 'Others - please specify')
-                Column(
-                  children: [
-                    TextFormField(
-                      controller: _goalController,
-                      decoration: const InputDecoration(
-                        labelText: 'Specify your goal',
-                      ),
-                      validator: (value) =>
-                          requiredField(value, 'Please specify your goal'),
-                    ),
-                    clientFieldGap,
-                  ],
-                ),
-              const Text(
-                'Schedule Days',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
-                  (day) {
-                    return FilterChip(
-                      label: Text(day),
-                      selected: _selectedDays.contains(day),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedDays.add(day);
-                          } else {
-                            _selectedDays.remove(day);
-                            if (_selectedDays.isEmpty) {
-                              _scheduleTime = null;
-                              _scheduleError = null;
-                            }
-                          }
-                        });
-                      },
-                    );
-                  },
-                ).toList(),
-              ),
-              if (_selectedDays.isNotEmpty) ...[
-                clientFieldGap,
-                GestureDetector(
-                  onTap: () async {
-                    final picked = await showTimePicker(
-                      context: context,
-                      initialTime: _scheduleTime ?? TimeOfDay.now(),
-                    );
-                    if (picked != null && mounted) {
-                      setState(() {
-                        _scheduleTime = picked;
-                        _scheduleError = null;
-                      });
-                    }
-                  },
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Schedule Time',
-                      suffixIcon: const Icon(Icons.access_time),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      errorText: _scheduleError,
-                    ),
-                    child: Text(
-                      _scheduleTime?.format(context) ?? 'Select time',
-                    ),
-                  ),
-                ),
-              ],
-              clientFieldGap,
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(labelText: 'Notes'),
-                maxLines: 3,
+              EditClientFormFields(
+                nameController: _nameController,
+                emailController: _emailController,
+                phoneController: _phoneController,
+                goalController: _goalController,
+                notesController: _notesController,
+                goalOptions: goalOptions,
+                selectedGoal: _selectedGoal,
+                selectedDays: _selectedDays,
+                scheduleTime: _scheduleTime,
+                scheduleError: _scheduleError,
+                onGoalChanged: (value) => setState(() => _selectedGoal = value),
+                onDaysChanged: (days) => setState(() => _selectedDays = days),
+                onTimeChanged: (time) => setState(() => _scheduleTime = time),
+                onErrorChanged: (error) =>
+                    setState(() => _scheduleError = error),
               ),
               const SizedBox(height: 24),
               ElevatedButton(

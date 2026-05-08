@@ -20,68 +20,10 @@ void main() async {
     debugPrint('Firebase failed to initialize.');
     debugPrint('$error');
     debugPrintStack(stackTrace: stackTrace);
-    runApp(FirebaseStartupErrorApp(error: error));
+    runApp(const MaterialApp(home: Scaffold(body: Center(child: Text('Firebase initialization failed.')))));
     return;
   }
   runApp(const MyApp());
-}
-
-class FirebaseStartupErrorApp extends StatelessWidget {
-  final Object error;
-
-  const FirebaseStartupErrorApp({super.key, required this.error});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'FitEd Trainer',
-      home: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FB),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.cloud_off_rounded,
-                    color: Color(0xFF1E40AF),
-                    size: 44,
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Firebase is not configured for this platform',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Android is configured, but this run target needs its own Firebase options before the app can connect.',
-                    style: TextStyle(color: Color(0xFF64748B), height: 1.4),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$error',
-                    style: const TextStyle(
-                      color: Color(0xFF991B1B),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class MyApp extends StatelessWidget {

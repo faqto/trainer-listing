@@ -1,17 +1,18 @@
 import 'dart:ui';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../helpers/firebase_error_messages.dart';
 import '../../models/client_model.dart';
+import '../../models/home_activity.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../services/client_repository.dart';
+import '../../widgets/home/home_load_error.dart';
 import 'clients_tab.dart';
 import 'dashboard_tab.dart';
 import 'home_constants.dart';
-import 'home_models.dart';
 import 'plans_tab.dart';
 import 'settings_tab.dart';
 
@@ -81,8 +82,8 @@ class _HomePageState extends State<HomePage> {
         }
         if (snapshot.hasError) {
           return Scaffold(
-            body: _HomeLoadError(
-              message: _clientLoadErrorMessage(snapshot.error),
+            body: HomeLoadError(
+              message: clientLoadErrorMessage(snapshot.error),
               onRetry: _loadClients,
               onLogout: _logout,
             ),
@@ -212,91 +213,6 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
-    );
-  }
-
-  String _clientLoadErrorMessage(Object? error) {
-    if (error is FirebaseException) {
-      switch (error.code) {
-        case 'permission-denied':
-          return 'Firestore blocked client access. Update your Firestore rules for signed-in users.';
-        case 'unauthenticated':
-          return 'Please sign in again before loading clients.';
-        case 'not-found':
-          return 'Firestore database was not found for this Firebase project.';
-        default:
-          return error.message ?? 'Unable to load clients.';
-      }
-    }
-
-    return 'Unable to load clients: $error';
-  }
-}
-
-class _HomeLoadError extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  final VoidCallback onLogout;
-
-  const _HomeLoadError({
-    required this.message,
-    required this.onRetry,
-    required this.onLogout,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.lock_outline_rounded,
-                color: primaryColor,
-                size: 44,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Client access is blocked',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: inkColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: mutedColor, height: 1.4),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: onLogout,
-                      child: const Text('Sign Out'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: onRetry,
-                      child: const Text('Retry'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

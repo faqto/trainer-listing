@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:trainer_listing/models/client_model.dart';
 import 'package:trainer_listing/widgets/activity_tile.dart';
@@ -158,9 +160,9 @@ class HomeContent extends StatelessWidget {
                 );
               },
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

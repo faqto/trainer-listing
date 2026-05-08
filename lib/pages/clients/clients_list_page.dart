@@ -1,22 +1,155 @@
 import 'package:flutter/material.dart';
 
-class ClientsListPage extends StatelessWidget {
+import '../../models/client_model.dart';
+import '../../routes/app_routes.dart';
+import '../../services/client_repository.dart';
+
+class ClientsListPage extends StatefulWidget {
   const ClientsListPage({super.key});
+
+  @override
+  State<ClientsListPage> createState() => _ClientsListPageState();
+}
+
+class _ClientsListPageState extends State<ClientsListPage> {
+  late Future<List<Client>> _clientsFuture;
+
+  void _refreshClients() {
+    setState(() {
+      _clientsFuture = ClientRepository.instance.clients;
+    });
+  }
+
+  Future<void> _openClientDetails(String clientId) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.clientInfo,
+      arguments: clientId,
+    );
+    if (result == true) {
+      _refreshClients();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _clientsFuture = ClientRepository.instance.clients;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Clients')),
-      body: ListView.builder(
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text('Client ${index + 1}'),
-            subtitle: const Text('Tap to view details'),
-            onTap: () {},
+      appBar: AppBar(
+        title: const Text(
+          'Clients',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: FutureBuilder<List<Client>>(
+        future: _clientsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          final clients = snapshot.data ?? [];
+          if (clients.isEmpty) {
+            return const Center(
+              child: Text('No clients yet. Add a client to get started.'),
+            );
+          }
+          return ListView.separated(
+            itemCount: clients.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final client = clients[index];
+              return Container(
+                color: Colors.white,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF13294B),
+                    child: Text(
+                      client.name.isEmpty ? '?' : client.name[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    client.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  subtitle: Text(
+                    client.goal,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) {
+                          return AlertDialog(
+                            title: const Text('Delete Client'),
+                            content: Text('Delete ${client.name}?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  ClientRepository.instance.deleteClient(
+                                    client.id,
+                                  );
+                                  Navigator.of(ctx).pop();
+                                  _refreshClients();
+                                },
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  onTap: () => _openClientDetails(client.id),
+                ),
+              );
+            },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.pushNamed(
+            context,
+            AppRoutes.addClient,
+          );
+          if (result == true) {
+            _refreshClients();
+          }
+        },
+        child: const Icon(Icons.person_add),
       ),
     );
   }

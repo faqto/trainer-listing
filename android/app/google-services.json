@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "493199183081",
+    "project_id": "fited-501bc",
+    "storage_bucket": "fited-501bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:493199183081:android:3989ae065f100f2d057478",
+        "android_client_info": {
+          "package_name": "fited.go"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADyvYaPZmw2C4L8z4VR23kZXgjW9H30nA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

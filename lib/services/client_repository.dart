@@ -1,92 +1,82 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/client_model.dart';
+import 'auth_repository.dart';
 
-class ClientRepository {
-  ClientRepository._();
+abstract class ClientRepository {
+  static ClientRepository instance = FirestoreClientRepository();
 
-  static final ClientRepository instance = ClientRepository._();
+  Future<List<Client>> get clients;
 
-  final List<Client> _clients = _seedClients();
+  Future<Client?> getById(String id);
 
-  static List<Client> _seedClients() {
-    return [
-      Client(
-        id: '1',
-        name: 'Sarah Jenkins',
-        email: 'sarah.jenkins@example.com',
-        phone: '+1 555 0145',
-        age: 28,
-        gender: 'Female',
-        goal: 'Build lean muscle',
-        notes: 'Focus on strength and posture improvement.',
-        trainingProgram: 'General Fitness',
-        schedule: 'Mon / Wed / Fri',
-        fitnessRegime:
-            'Full-body strength: squats, rows, presses, hip hinges. 3 sets of 8-12 reps.',
-        cardioPlan: '20 minutes incline walk after strength sessions.',
-        weightKg: 63,
-        heightCm: 165,
-        bodyFatPercent: 22,
-        waistCm: 72,
-        hipsCm: 96,
-        chestCm: 88,
-      ),
-      Client(
-        id: '2',
-        name: 'Marcus Johnson',
-        email: 'marcus.johnson@example.com',
-        phone: '+1 555 0167',
-        age: 31,
-        gender: 'Male',
-        goal: 'Lose fat and improve cardio',
-        notes: 'Weekly progress photos and interval sessions.',
-        trainingProgram: 'Strength + Cardio',
-        schedule: 'Tue / Thu / Sat',
-        fitnessRegime:
-            'Upper/lower strength split with compound lifts and core finishers.',
-        cardioPlan: 'Intervals: 8 rounds of 30 seconds hard, 90 seconds easy.',
-        weightKg: 84,
-        heightCm: 180,
-        bodyFatPercent: 19,
-        waistCm: 88,
-        hipsCm: 99,
-        chestCm: 104,
-      ),
-    ];
+  Future<void> addClient(Client client);
+
+  Future<void> updateClient(Client client);
+
+  Future<void> deleteClient(String id);
+
+  Future<void> resetForTesting();
+
+  String createClientId();
+}
+
+class FirestoreClientRepository implements ClientRepository {
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+
+  CollectionReference<Map<String, dynamic>> get _clientsCollection {
+    final userId = AuthRepository.instance.currentUserId;
+    if (userId == null) {
+      throw FirebaseException(
+        plugin: 'cloud_firestore',
+        code: 'unauthenticated',
+        message: 'Please sign in before loading clients.',
+      );
+    }
+
+    return _firestore.collection('users').doc(userId).collection('clients');
   }
 
-  List<Client> get clients => List.unmodifiable(_clients);
+  @override
+  Future<List<Client>> get clients async {
+    final snapshot = await _clientsCollection.get();
+    return snapshot.docs
+        .map((doc) => Client.fromMap(doc.data(), doc.id))
+        .toList();
+  }
 
-  Client? getById(String id) {
-    for (final client in _clients) {
-      if (client.id == id) {
-        return client;
-      }
+  @override
+  Future<Client?> getById(String id) async {
+    final doc = await _clientsCollection.doc(id).get();
+    if (doc.exists) {
+      return Client.fromMap(doc.data()!, doc.id);
     }
     return null;
   }
 
-  void addClient(Client client) {
-    _clients.add(client);
+  @override
+  Future<void> addClient(Client client) async {
+    await _clientsCollection.doc(client.id).set(client.toMap());
   }
 
-  void updateClient(Client client) {
-    final index = _clients.indexWhere((item) => item.id == client.id);
-    if (index >= 0) {
-      _clients[index] = client;
-    }
+  @override
+  Future<void> updateClient(Client client) async {
+    await _clientsCollection.doc(client.id).update(client.toMap());
   }
 
-  void deleteClient(String id) {
-    _clients.removeWhere((client) => client.id == id);
+  @override
+  Future<void> deleteClient(String id) async {
+    await _clientsCollection.doc(id).delete();
   }
 
+  @override
+  Future<void> resetForTesting() async {
+    // No-op for Firestore-backed repository. Use Firestore emulator or
+    // a separate test setup if real test isolation is required.
+  }
+
+  @override
   String createClientId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
-
-  void resetForTesting() {
-    _clients
-      ..clear()
-      ..addAll(_seedClients());
+    return _clientsCollection.doc().id;
   }
 }

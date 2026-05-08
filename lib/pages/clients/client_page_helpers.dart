@@ -19,7 +19,11 @@ List<String> parseScheduleDays(String schedule) {
       .toList();
 }
 
-String formatScheduleDays(List<String> days, TimeOfDay? time, BuildContext context) {
+String formatScheduleDays(
+  List<String> days,
+  TimeOfDay? time,
+  BuildContext context,
+) {
   if (days.isEmpty) return '';
   final base = days.join(' / ');
   return time == null ? base : '$base at ${time.format(context)}';

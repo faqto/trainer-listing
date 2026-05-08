@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
@@ -21,9 +22,10 @@ class _AddClientPageState extends State<AddClientPage> {
   final _goalController = TextEditingController();
 
   String? _selectedGoal;
-  List<String> _selectedDays = [];
+  final List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
+  bool _isSaving = false;
 
   static const List<String> goalOptions = [
     'Weight gain',
@@ -33,13 +35,22 @@ class _AddClientPageState extends State<AddClientPage> {
     'Others - please specify',
   ];
 
-  void _saveClient() {
-    if (!_formKey.currentState!.validate() || _selectedGoal == null) return;
+  Future<void> _saveClient() async {
+    if (_isSaving) return;
+    if (!_formKey.currentState!.validate() || _selectedGoal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete the required fields.')),
+      );
+      return;
+    }
 
     if (_selectedDays.isNotEmpty && _scheduleTime == null) {
       setState(() {
         _scheduleError = 'Please select a time for the schedule';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a schedule time.')),
+      );
       return;
     }
 
@@ -63,8 +74,45 @@ class _AddClientPageState extends State<AddClientPage> {
       notes: '',
     );
 
-    ClientRepository.instance.addClient(client);
-    Navigator.pop(context, true);
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await ClientRepository.instance.addClient(client);
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } on FirebaseException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_firebaseSaveErrorMessage(error))));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to save client: $error')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  String _firebaseSaveErrorMessage(FirebaseException error) {
+    switch (error.code) {
+      case 'permission-denied':
+        return 'Firestore blocked this save. Check your database rules.';
+      case 'unavailable':
+        return 'Firestore is unavailable right now. Check your connection.';
+      case 'not-found':
+        return 'Firestore database was not found for this Firebase project.';
+      default:
+        return error.message ?? 'Unable to save client. Please try again.';
+    }
   }
 
   @override
@@ -166,29 +214,34 @@ class _AddClientPageState extends State<AddClientPage> {
                         clientFieldGap,
                       ],
                     ),
-                  const Text('Schedule Days', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Schedule Days',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
-                    children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
-                      return FilterChip(
-                        label: Text(day),
-                        selected: _selectedDays.contains(day),
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedDays.add(day);
-                            } else {
-                              _selectedDays.remove(day);
-                              if (_selectedDays.isEmpty) {
-                                _scheduleTime = null;
-                                _scheduleError = null;
-                              }
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                    children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        .map((day) {
+                          return FilterChip(
+                            label: Text(day),
+                            selected: _selectedDays.contains(day),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedDays.add(day);
+                                } else {
+                                  _selectedDays.remove(day);
+                                  if (_selectedDays.isEmpty) {
+                                    _scheduleTime = null;
+                                    _scheduleError = null;
+                                  }
+                                }
+                              });
+                            },
+                          );
+                        })
+                        .toList(),
                   ),
                   if (_selectedDays.isNotEmpty) ...[
                     clientFieldGap,
@@ -198,7 +251,7 @@ class _AddClientPageState extends State<AddClientPage> {
                           context: context,
                           initialTime: _scheduleTime ?? TimeOfDay.now(),
                         );
-                        if (picked != null) {
+                        if (picked != null && mounted) {
                           setState(() {
                             _scheduleTime = picked;
                             _scheduleError = null;
@@ -224,7 +277,7 @@ class _AddClientPageState extends State<AddClientPage> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _saveClient,
+                onPressed: _isSaving ? null : _saveClient,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF8C42),
                   minimumSize: const Size.fromHeight(56),
@@ -232,7 +285,16 @@ class _AddClientPageState extends State<AddClientPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text('Save', style: TextStyle(fontSize: 16)),
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Save', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

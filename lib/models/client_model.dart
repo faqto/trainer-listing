@@ -19,6 +19,32 @@ class ProgressEntry {
     this.note = '',
   }) : date = date ?? DateTime.now();
 
+  Map<String, dynamic> toMap() {
+    return {
+      'date': date.toIso8601String(),
+      'weightKg': weightKg,
+      'heightCm': heightCm,
+      'bodyFatPercent': bodyFatPercent,
+      'waistCm': waistCm,
+      'hipsCm': hipsCm,
+      'chestCm': chestCm,
+      'note': note,
+    };
+  }
+
+  factory ProgressEntry.fromMap(Map<String, dynamic> map) {
+    return ProgressEntry(
+      date: DateTime.parse(map['date']),
+      weightKg: map['weightKg'] ?? 0.0,
+      heightCm: map['heightCm'] ?? 0.0,
+      bodyFatPercent: map['bodyFatPercent'] ?? 0.0,
+      waistCm: map['waistCm'] ?? 0.0,
+      hipsCm: map['hipsCm'] ?? 0.0,
+      chestCm: map['chestCm'] ?? 0.0,
+      note: map['note'] ?? '',
+    );
+  }
+
   double? get bmi {
     if (weightKg <= 0 || heightCm <= 0) return null;
     final heightMeters = heightCm / 100;
@@ -182,6 +208,60 @@ class Client {
         note: 'Initial record',
       ),
     ];
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'age': age,
+      'gender': gender,
+      'goal': goal,
+      'notes': notes,
+      'trainingProgram': trainingProgram,
+      'schedule': schedule,
+      'fitnessRegime': fitnessRegime,
+      'cardioPlan': cardioPlan,
+      'joinDate': joinDate.toIso8601String(),
+      'weightKg': weightKg,
+      'heightCm': heightCm,
+      'bodyFatPercent': bodyFatPercent,
+      'waistCm': waistCm,
+      'hipsCm': hipsCm,
+      'chestCm': chestCm,
+      'progressEntries': progressEntries.map((e) => e.toMap()).toList(),
+    };
+  }
+
+  factory Client.fromMap(Map<String, dynamic> map, String id) {
+    return Client(
+      id: id,
+      name: map['name'] ?? '',
+      email: map['email'] ?? '',
+      phone: map['phone'] ?? '',
+      age: map['age'] ?? 0,
+      gender: map['gender'] ?? 'Not specified',
+      goal: map['goal'] ?? '',
+      notes: map['notes'] ?? '',
+      trainingProgram: map['trainingProgram'] ?? '',
+      schedule: map['schedule'] ?? '',
+      fitnessRegime: map['fitnessRegime'] ?? '',
+      cardioPlan: map['cardioPlan'] ?? '',
+      joinDate: map['joinDate'] != null
+          ? DateTime.parse(map['joinDate'])
+          : null,
+      weightKg: map['weightKg'] ?? 0.0,
+      heightCm: map['heightCm'] ?? 0.0,
+      bodyFatPercent: map['bodyFatPercent'] ?? 0.0,
+      waistCm: map['waistCm'] ?? 0.0,
+      hipsCm: map['hipsCm'] ?? 0.0,
+      chestCm: map['chestCm'] ?? 0.0,
+      progressEntries: (map['progressEntries'] as List<dynamic>?)
+          ?.map((e) => ProgressEntry.fromMap(e as Map<String, dynamic>))
+          .toList(),
+    );
   }
 }
 

@@ -7,12 +7,14 @@ import 'home_models.dart';
 class DashboardTab extends StatelessWidget {
   final List<Client> clients;
   final List<HomeActivity> recentActivity;
+  final String trainerName;
   final VoidCallback onAddClient;
 
   const DashboardTab({
     super.key,
     required this.clients,
     required this.recentActivity,
+    required this.trainerName,
     required this.onAddClient,
   });
 
@@ -25,27 +27,27 @@ class DashboardTab extends StatelessWidget {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(space2, space3, space2, 104),
+      padding: const EdgeInsets.fromLTRB(space2, 0, space2, 104),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Coach Ed',
-                      style: TextStyle(
+                      'Coach $trainerName',
+                      style: const TextStyle(
                         color: inkColor,
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     SizedBox(height: 6),
-                    Text(
+                    const Text(
                       'Today at a glance',
                       style: TextStyle(
                         color: mutedColor,

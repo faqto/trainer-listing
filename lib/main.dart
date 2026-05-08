@@ -1,14 +1,87 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'firebase_options.dart';
 import 'routes/app_routes.dart';
+import 'services/auth_repository.dart';
 
 final _navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (error, stackTrace) {
+    debugPrint('Firebase failed to initialize.');
+    debugPrint('$error');
+    debugPrintStack(stackTrace: stackTrace);
+    runApp(FirebaseStartupErrorApp(error: error));
+    return;
+  }
   runApp(const MyApp());
+}
+
+class FirebaseStartupErrorApp extends StatelessWidget {
+  final Object error;
+
+  const FirebaseStartupErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'FitEd Trainer',
+      home: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FB),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.cloud_off_rounded,
+                    color: Color(0xFF1E40AF),
+                    size: 44,
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Firebase is not configured for this platform',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Android is configured, but this run target needs its own Firebase options before the app can connect.',
+                    style: TextStyle(color: Color(0xFF64748B), height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '$error',
+                    style: const TextStyle(
+                      color: Color(0xFF991B1B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -86,7 +159,9 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: AppRoutes.login,
+        initialRoute: AuthRepository.instance.hasCurrentUser
+            ? AppRoutes.home
+            : AppRoutes.login,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );
@@ -115,6 +190,7 @@ class _SessionTimeoutState extends State<SessionTimeout> {
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
 
+    unawaited(AuthRepository.instance.signOut());
     navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
   }
 

@@ -35,8 +35,15 @@ class _EditClientPageState extends State<EditClientPage> {
     'Others - please specify',
   ];
 
-  void _loadClient() {
-    _client = ClientRepository.instance.getById(widget.clientId);
+  @override
+  void initState() {
+    super.initState();
+    _loadClient();
+  }
+
+  Future<void> _loadClient() async {
+    _client = await ClientRepository.instance.getById(widget.clientId);
+    if (!mounted) return;
     if (_client != null) {
       _nameController.text = _client!.name;
       _emailController.text = _client!.email;
@@ -58,9 +65,10 @@ class _EditClientPageState extends State<EditClientPage> {
       _selectedDays = parseScheduleDays(_client!.schedule);
       _scheduleTime = parseScheduleTime(_client!.schedule);
     }
+    setState(() {});
   }
 
-  void _saveClient() {
+  Future<void> _saveClient() async {
     if (!_formKey.currentState!.validate() ||
         _client == null ||
         _selectedGoal == null) {
@@ -89,14 +97,16 @@ class _EditClientPageState extends State<EditClientPage> {
       notes: _notesController.text.trim(),
     );
 
-    ClientRepository.instance.updateClient(updated);
-    Navigator.pop(context, true);
+    await ClientRepository.instance.updateClient(updated);
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
-  void _deleteClient() {
+  Future<void> _deleteClient() async {
     if (_client == null) return;
 
-    showDialog(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
@@ -104,27 +114,24 @@ class _EditClientPageState extends State<EditClientPage> {
           content: Text('Delete ${_client!.name}?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
+              onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                ClientRepository.instance.deleteClient(_client!.id);
-                Navigator.of(ctx).pop();
-                Navigator.of(context).pop(true);
-              },
+              onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
       },
     );
-  }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadClient();
+    if (confirmed == true) {
+      await ClientRepository.instance.deleteClient(_client!.id);
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    }
   }
 
   @override
@@ -204,29 +211,34 @@ class _EditClientPageState extends State<EditClientPage> {
                     clientFieldGap,
                   ],
                 ),
-              const Text('Schedule Days', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Schedule Days',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
-                  return FilterChip(
-                    label: Text(day),
-                    selected: _selectedDays.contains(day),
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedDays.add(day);
-                        } else {
-                          _selectedDays.remove(day);
-                          if (_selectedDays.isEmpty) {
-                            _scheduleTime = null;
-                            _scheduleError = null;
+                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
+                  (day) {
+                    return FilterChip(
+                      label: Text(day),
+                      selected: _selectedDays.contains(day),
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedDays.add(day);
+                          } else {
+                            _selectedDays.remove(day);
+                            if (_selectedDays.isEmpty) {
+                              _scheduleTime = null;
+                              _scheduleError = null;
+                            }
                           }
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
+                        });
+                      },
+                    );
+                  },
+                ).toList(),
               ),
               if (_selectedDays.isNotEmpty) ...[
                 clientFieldGap,
@@ -236,7 +248,7 @@ class _EditClientPageState extends State<EditClientPage> {
                       context: context,
                       initialTime: _scheduleTime ?? TimeOfDay.now(),
                     );
-                    if (picked != null) {
+                    if (picked != null && mounted) {
                       setState(() {
                         _scheduleTime = picked;
                         _scheduleError = null;
@@ -252,7 +264,9 @@ class _EditClientPageState extends State<EditClientPage> {
                       ),
                       errorText: _scheduleError,
                     ),
-                    child: Text(_scheduleTime?.format(context) ?? 'Select time'),
+                    child: Text(
+                      _scheduleTime?.format(context) ?? 'Select time',
+                    ),
                   ),
                 ),
               ],

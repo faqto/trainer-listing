@@ -23,17 +23,25 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
 
-  void _loadClient() {
-    _client = ClientRepository.instance.getById(widget.clientId);
+  @override
+  void initState() {
+    super.initState();
+    _loadClient();
+  }
+
+  Future<void> _loadClient() async {
+    _client = await ClientRepository.instance.getById(widget.clientId);
+    if (!mounted) return;
     if (_client != null) {
       _selectedDays = parseScheduleDays(_client!.schedule);
       _scheduleTime = parseScheduleTime(_client!.schedule);
       _regimeController.text = _client!.fitnessRegime;
       _cardioController.text = _client!.cardioPlan;
     }
+    setState(() {});
   }
 
-  void _saveRegime() {
+  Future<void> _saveRegime() async {
     if (!_formKey.currentState!.validate() || _client == null) return;
 
     if (_selectedDays.isNotEmpty && _scheduleTime == null) {
@@ -51,14 +59,10 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
       cardioPlan: _cardioController.text.trim(),
     );
 
-    ClientRepository.instance.updateClient(updated);
-    Navigator.pop(context, true);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadClient();
+    await ClientRepository.instance.updateClient(updated);
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   @override
@@ -84,11 +88,16 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Schedule Days', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text(
+              'Schedule Days',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
+              children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((
+                day,
+              ) {
                 return FilterChip(
                   label: Text(day),
                   selected: _selectedDays.contains(day),
@@ -116,7 +125,7 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
                     context: context,
                     initialTime: _scheduleTime ?? TimeOfDay.now(),
                   );
-                  if (picked != null) {
+                  if (picked != null && mounted) {
                     setState(() {
                       _scheduleTime = picked;
                       _scheduleError = null;

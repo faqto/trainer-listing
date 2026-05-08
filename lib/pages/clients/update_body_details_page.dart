@@ -24,8 +24,15 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
   final _noteController = TextEditingController();
   Client? _client;
 
-  void _loadClient() {
-    _client = ClientRepository.instance.getById(widget.clientId);
+  @override
+  void initState() {
+    super.initState();
+    _loadClient();
+  }
+
+  Future<void> _loadClient() async {
+    _client = await ClientRepository.instance.getById(widget.clientId);
+    if (!mounted) return;
     if (_client != null) {
       _weightController.text = _client!.weightKg.toString();
       _heightController.text = _client!.heightCm.toString();
@@ -34,9 +41,10 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
       _hipsController.text = _client!.hipsCm.toString();
       _chestController.text = _client!.chestCm.toString();
     }
+    setState(() {});
   }
 
-  void _saveMetrics() {
+  Future<void> _saveMetrics() async {
     if (!_formKey.currentState!.validate() || _client == null) return;
 
     final progressEntry = ProgressEntry(
@@ -59,14 +67,10 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
       progressEntries: [..._client!.progressEntries, progressEntry],
     );
 
-    ClientRepository.instance.updateClient(updated);
-    Navigator.pop(context, true);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadClient();
+    await ClientRepository.instance.updateClient(updated);
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   @override

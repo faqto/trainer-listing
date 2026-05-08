@@ -1,20 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:trainer_listing/models/client_model.dart';
+import 'package:trainer_listing/widgets/activity_tile.dart';
 
-import '../../helpers/firebase_error_messages.dart';
-import '../../models/client_model.dart';
-import '../../models/home_activity.dart';
-import '../../routes/app_routes.dart';
-import '../../services/auth_repository.dart';
-import '../../services/client_repository.dart';
-import '../../widgets/home/home_load_error.dart';
-import 'clients_tab.dart';
-import 'dashboard_tab.dart';
-import 'home_constants.dart';
-import 'plans_tab.dart';
-import 'settings_tab.dart';
+import '../clients/clients_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,191 +14,151 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
+  int currentIndex = 0;
 
-  late Future<List<Client>> _clientsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadClients();
-  }
-
-  Future<void> _loadClients() async {
-    setState(() {
-      _clientsFuture = ClientRepository.instance.clients;
-    });
-  }
-
-  void _setIndex(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  Future<void> _openAddClient() async {
-    final result = await Navigator.pushNamed(context, AppRoutes.addClient);
-    if (result == true) {
-      _loadClients();
-    }
-  }
-
-  Future<void> _openClientDetails(String clientId) async {
-    final result = await Navigator.pushNamed(
-      context,
-      AppRoutes.clientInfo,
-      arguments: clientId,
-    );
-    if (result == true) {
-      _loadClients();
-    }
-  }
-
-  Future<void> _logout() async {
-    await AuthRepository.instance.signOut();
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
-  }
+  final List<Widget> pages = [const HomeContent(), const ClientsListPage()];
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Client>>(
-      future: _clientsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: HomeLoadError(
-              message: clientLoadErrorMessage(snapshot.error),
-              onRetry: _loadClients,
-              onLogout: _logout,
+    return Scaffold(
+      appBar: AppBar(title: const Text('FitEd Trainer'), centerTitle: true),
+
+      body: pages[currentIndex],
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+
+        onTap: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Clients'),
+        ],
+      ),
+    );
+  }
+}
+
+class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
+          children: [
+            const Text(
+              'Welcome Trainer 👋',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-          );
-        }
-        final clients = snapshot.data ?? [];
-        final recentActivities = clients.map((client) {
-          return HomeActivity(
-            name: client.name,
-            subtitle: client.goal,
-            time: 'Joined ${client.joinDateLabel}',
-            icon: Icons.timer,
-            color: Colors.blueAccent,
-          );
-        }).toList();
 
-        final titles = ['Dashboard', 'Plans', 'Clients', 'Settings'];
-        final bodies = [
-          DashboardTab(
-            clients: clients,
-            recentActivity: recentActivities,
-            trainerName: AuthRepository.instance.currentUserName,
-            onAddClient: _openAddClient,
-          ),
-          PlansTab(clients: clients, onOpenClient: _openClientDetails),
-          ClientsTab(
-            clients: clients,
-            onAddClient: _openAddClient,
-            onOpenClient: _openClientDetails,
-          ),
-          SettingsTab(onLogout: _logout),
-        ];
+            const SizedBox(height: 10),
 
-        return Scaffold(
-          backgroundColor: pageBackgroundColor,
-          extendBody: false,
-          body: NestedScrollView(
-            physics: const BouncingScrollPhysics(),
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverAppBar(
-                  pinned: true,
-                  automaticallyImplyLeading: false,
-                  expandedHeight: 86,
-                  stretch: false,
-                  backgroundColor: const Color(0xFF101827),
-                  toolbarHeight: 56,
-                  titleSpacing: space2,
-                  title: Text(
-                    titles[_selectedIndex],
-                    style: GoogleFonts.bebasNeue(
-                      fontSize: 28,
-                      letterSpacing: 0,
-                      color: Colors.white,
-                    ),
-                  ),
-                  flexibleSpace: const FlexibleSpaceBar(
-                    background: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF111827),
-                            Color(0xFF164E63),
-                            Color(0xFF1E3A8A),
-                          ],
-                        ),
+            const Text(
+              'Manage your clients and track their fitness progress.',
+              style: TextStyle(fontSize: 16),
+            ),
+
+            const SizedBox(height: 25),
+
+            const Text(
+              'Quick Actions',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                SizedBox(
+                  width: 160,
+                  height: 100,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Add client page
+                    },
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Add Client'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                   ),
                 ),
-              ];
-            },
-            body: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 260),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              child: KeyedSubtree(
-                key: ValueKey(_selectedIndex),
-                child: bodies[_selectedIndex],
-              ),
-            ),
-          ),
-          bottomNavigationBar: SafeArea(
-            minimum: const EdgeInsets.fromLTRB(space2, 0, space2, space2),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((0.78 * 255).round()),
-                    border: Border.all(color: Colors.white.withAlpha(150)),
-                    boxShadow: premiumCardShadows,
-                  ),
-                  child: BottomNavigationBar(
-                    type: BottomNavigationBarType.fixed,
-                    elevation: 0,
-                    backgroundColor: Colors.transparent,
-                    currentIndex: _selectedIndex,
-                    onTap: _setIndex,
-                    selectedItemColor: primaryColor,
-                    unselectedItemColor: mutedColor,
-                    items: const [
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.home),
-                        label: 'Home',
+
+                const SizedBox(width: 12),
+
+                SizedBox(
+                  width: 160,
+                  height: 100,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // analytics / progress page
+                    },
+                    icon: const Icon(Icons.analytics),
+                    label: const Text('Progress'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.assignment),
-                        label: 'Plans',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.people),
-                        label: 'Clients',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.settings),
-                        label: 'Settings',
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
+            ),
+
+            const SizedBox(height: 30),
+
+            // HEADER
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+              children: [
+                const Text(
+                  'Recent Activity',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+
+                TextButton(
+                  onPressed: () {
+                    // view all page
+                  },
+
+                  child: const Text('See All'),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // LIST
+            ListView.builder(
+              itemCount: 5,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+
+              itemBuilder: (context, index) {
+                final client = recentActivities[index];
+
+                return ActivityTile(
+                  client: client,
+
+                  onTap: () {
+                    // open client information page
+                  },
+                );
+              },
             ),
           ),
         );

@@ -25,6 +25,7 @@ class _EditClientPageState extends State<EditClientPage> {
   String? _selectedGoal;
   List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
+  String? _scheduleError;
 
   static const List<String> goalOptions = [
     'Weight gain',
@@ -54,7 +55,7 @@ class _EditClientPageState extends State<EditClientPage> {
         }
       }
 
-      _selectedDays = _client!.schedule.split(' at ').first.split(' / ').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      _selectedDays = parseScheduleDays(_client!.schedule);
       _scheduleTime = parseScheduleTime(_client!.schedule);
     }
   }
@@ -66,11 +67,18 @@ class _EditClientPageState extends State<EditClientPage> {
       return;
     }
 
+    if (_selectedDays.isNotEmpty && _scheduleTime == null) {
+      setState(() {
+        _scheduleError = 'Please select a time for the schedule';
+      });
+      return;
+    }
+
     final goal = _selectedGoal == 'Others - please specify'
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
-    final schedule = _selectedDays.isEmpty ? '' : _selectedDays.join(' / ') + (_scheduleTime != null ? ' at ${_scheduleTime!.format(context)}' : '');
+    final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
 
     final updated = _client!.copyWith(
       name: _nameController.text.trim(),
@@ -210,6 +218,10 @@ class _EditClientPageState extends State<EditClientPage> {
                           _selectedDays.add(day);
                         } else {
                           _selectedDays.remove(day);
+                          if (_selectedDays.isEmpty) {
+                            _scheduleTime = null;
+                            _scheduleError = null;
+                          }
                         }
                       });
                     },
@@ -227,6 +239,7 @@ class _EditClientPageState extends State<EditClientPage> {
                     if (picked != null) {
                       setState(() {
                         _scheduleTime = picked;
+                        _scheduleError = null;
                       });
                     }
                   },
@@ -237,6 +250,7 @@ class _EditClientPageState extends State<EditClientPage> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      errorText: _scheduleError,
                     ),
                     child: Text(_scheduleTime?.format(context) ?? 'Select time'),
                   ),

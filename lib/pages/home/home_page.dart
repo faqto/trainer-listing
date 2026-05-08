@@ -91,23 +91,21 @@ class _HomePageState extends State<HomePage> {
           return [
             SliverAppBar(
               pinned: true,
-              expandedHeight: 104,
+              automaticallyImplyLeading: false,
+              expandedHeight: 82,
               stretch: false,
               backgroundColor: const Color(0xFF101827),
-              toolbarHeight: 58,
+              toolbarHeight: 56,
+              titleSpacing: space2,
+              title: Text(
+                titles[_selectedIndex],
+                style: GoogleFonts.bebasNeue(
+                  fontSize: 28,
+                  letterSpacing: 0,
+                  color: Colors.white,
+                ),
+              ),
               flexibleSpace: FlexibleSpaceBar(
-                titlePadding: const EdgeInsetsDirectional.only(
-                  start: space2,
-                  bottom: 12,
-                ),
-                title: Text(
-                  titles[_selectedIndex],
-                  style: GoogleFonts.bebasNeue(
-                    fontSize: 28,
-                    letterSpacing: 0,
-                    color: Colors.white,
-                  ),
-                ),
                 background: Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(

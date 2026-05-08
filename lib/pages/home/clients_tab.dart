@@ -220,6 +220,7 @@ class _FilterDropdown extends StatelessWidget {
       curve: Curves.easeOutCubic,
       margin: const EdgeInsets.only(right: space1),
       padding: const EdgeInsets.symmetric(horizontal: 12),
+      constraints: const BoxConstraints(minWidth: 150),
       decoration: BoxDecoration(
         color: active ? primaryColor : Colors.white.withAlpha(230),
         border: Border.all(color: active ? primaryColor : cardBorderColor),
@@ -228,16 +229,24 @@ class _FilterDropdown extends StatelessWidget {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: values.contains(value) ? value : values.first,
+          value: values.contains(value) ? value : defaultValue,
           dropdownColor: Colors.white,
           icon: Icon(
             Icons.keyboard_arrow_down,
             color: active ? Colors.white : mutedColor,
           ),
-          style: TextStyle(
-            color: active ? Colors.white : inkColor,
-            fontWeight: FontWeight.w700,
-          ),
+          isDense: true,
+          selectedItemBuilder: (context) {
+            return values.map((item) {
+              return Text(
+                item,
+                style: TextStyle(
+                  color: active ? Colors.white : inkColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              );
+            }).toList();
+          },
           items: values
               .map(
                 (item) => DropdownMenuItem(

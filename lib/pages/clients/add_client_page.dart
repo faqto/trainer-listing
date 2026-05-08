@@ -23,6 +23,7 @@ class _AddClientPageState extends State<AddClientPage> {
   String? _selectedGoal;
   List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
+  String? _scheduleError;
 
   static const List<String> goalOptions = [
     'Weight gain',
@@ -35,11 +36,18 @@ class _AddClientPageState extends State<AddClientPage> {
   void _saveClient() {
     if (!_formKey.currentState!.validate() || _selectedGoal == null) return;
 
+    if (_selectedDays.isNotEmpty && _scheduleTime == null) {
+      setState(() {
+        _scheduleError = 'Please select a time for the schedule';
+      });
+      return;
+    }
+
     final goal = _selectedGoal == 'Others - please specify'
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
-    final schedule = _selectedDays.isEmpty ? '' : _selectedDays.join(' / ');
+    final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
 
     final client = Client(
       id: ClientRepository.instance.createClientId(),
@@ -172,6 +180,10 @@ class _AddClientPageState extends State<AddClientPage> {
                               _selectedDays.add(day);
                             } else {
                               _selectedDays.remove(day);
+                              if (_selectedDays.isEmpty) {
+                                _scheduleTime = null;
+                                _scheduleError = null;
+                              }
                             }
                           });
                         },
@@ -184,11 +196,12 @@ class _AddClientPageState extends State<AddClientPage> {
                       onTap: () async {
                         final picked = await showTimePicker(
                           context: context,
-                          initialTime: TimeOfDay.now(),
+                          initialTime: _scheduleTime ?? TimeOfDay.now(),
                         );
                         if (picked != null) {
                           setState(() {
                             _scheduleTime = picked;
+                            _scheduleError = null;
                           });
                         }
                       },
@@ -199,6 +212,7 @@ class _AddClientPageState extends State<AddClientPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
+                          errorText: _scheduleError,
                         ),
                         child: Text(
                           _scheduleTime?.format(context) ?? 'Select time',

@@ -15,15 +15,19 @@ class EditFitnessRegimePage extends StatefulWidget {
 
 class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   final _formKey = GlobalKey<FormState>();
-  final _scheduleController = TextEditingController();
   final _regimeController = TextEditingController();
   final _cardioController = TextEditingController();
   Client? _client;
 
+  List<String> _selectedDays = [];
+  TimeOfDay? _scheduleTime;
+  String? _scheduleError;
+
   void _loadClient() {
     _client = ClientRepository.instance.getById(widget.clientId);
     if (_client != null) {
-      _scheduleController.text = _client!.schedule;
+      _selectedDays = parseScheduleDays(_client!.schedule);
+      _scheduleTime = parseScheduleTime(_client!.schedule);
       _regimeController.text = _client!.fitnessRegime;
       _cardioController.text = _client!.cardioPlan;
     }
@@ -32,8 +36,17 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   void _saveRegime() {
     if (!_formKey.currentState!.validate() || _client == null) return;
 
+    if (_selectedDays.isNotEmpty && _scheduleTime == null) {
+      setState(() {
+        _scheduleError = 'Please select a time for the schedule';
+      });
+      return;
+    }
+
+    final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
+
     final updated = _client!.copyWith(
-      schedule: _scheduleController.text.trim(),
+      schedule: schedule,
       fitnessRegime: _regimeController.text.trim(),
       cardioPlan: _cardioController.text.trim(),
     );
@@ -50,7 +63,6 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
 
   @override
   void dispose() {
-    _scheduleController.dispose();
     _regimeController.dispose();
     _cardioController.dispose();
     super.dispose();
@@ -72,15 +84,58 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
-              controller: _scheduleController,
-              decoration: const InputDecoration(
-                labelText: 'Training schedule',
-                hintText: 'Mon / Wed / Fri',
-                prefixIcon: Icon(Icons.event_available_outlined),
-              ),
-              validator: (value) => requiredField(value, 'Enter a schedule'),
+            const Text('Schedule Days', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
+                return FilterChip(
+                  label: Text(day),
+                  selected: _selectedDays.contains(day),
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedDays.add(day);
+                      } else {
+                        _selectedDays.remove(day);
+                        if (_selectedDays.isEmpty) {
+                          _scheduleTime = null;
+                          _scheduleError = null;
+                        }
+                      }
+                    });
+                  },
+                );
+              }).toList(),
             ),
+            if (_selectedDays.isNotEmpty) ...[
+              clientFieldGap,
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: _scheduleTime ?? TimeOfDay.now(),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _scheduleTime = picked;
+                      _scheduleError = null;
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Schedule Time',
+                    suffixIcon: const Icon(Icons.access_time),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    errorText: _scheduleError,
+                  ),
+                  child: Text(_scheduleTime?.format(context) ?? 'Select time'),
+                ),
+              ),
+            ],
             clientFieldGap,
             TextFormField(
               controller: _regimeController,

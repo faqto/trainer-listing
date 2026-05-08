@@ -9,6 +9,22 @@ String? requiredField(String? value, String message) {
   return value == null || value.trim().isEmpty ? message : null;
 }
 
+List<String> parseScheduleDays(String schedule) {
+  return schedule
+      .split(' at ')
+      .first
+      .split(' / ')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+}
+
+String formatScheduleDays(List<String> days, TimeOfDay? time, BuildContext context) {
+  if (days.isEmpty) return '';
+  final base = days.join(' / ');
+  return time == null ? base : '$base at ${time.format(context)}';
+}
+
 double parseMetric(String value) {
   return double.tryParse(value.replaceAll(',', '.')) ?? 0;
 }

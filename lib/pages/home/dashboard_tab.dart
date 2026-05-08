@@ -18,7 +18,6 @@ class DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final averageBmi = _averageBmi(clients);
     final sessionsToday = clients.where(_hasSessionToday).length;
     final newClientsToday = clients
         .where((client) => _isToday(client.joinDate))
@@ -26,67 +25,115 @@ class DashboardTab extends StatelessWidget {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(space2, space2, space2, 104),
+      padding: const EdgeInsets.fromLTRB(space2, space3, space2, 104),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Coach Ed',
-            style: TextStyle(
-              color: inkColor,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Today at a glance',
-            style: TextStyle(color: mutedColor, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 24),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _DashboardMetricCard(
-                label: 'Active Clients',
-                value: clients.length.toString(),
-                color: primaryColor,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Coach Ed',
+                      style: TextStyle(
+                        color: inkColor,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Today at a glance',
+                      style: TextStyle(
+                        color: mutedColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              _DashboardMetricCard(
-                label: 'Sessions Today',
-                value: sessionsToday.toString(),
-                color: tealColor,
-              ),
-              _DashboardMetricCard(
-                label: 'Avg. BMI',
-                value: averageBmi,
-                color: amberColor,
-              ),
-              _DashboardMetricCard(
-                label: 'New Clients',
-                value: newClientsToday.toString(),
-                color: roseColor,
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: onAddClient,
+                icon: const Icon(Icons.person_add_alt_1, size: 18),
+                label: const Text('Add'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onAddClient,
-              icon: const Icon(Icons.person_add_alt_1),
-              label: const Text('Add Client'),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: cardBorderColor),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: premiumCardShadows,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _DashboardMetric(
+                    label: 'Clients',
+                    value: clients.length.toString(),
+                    color: primaryColor,
+                    icon: Icons.people_alt_rounded,
+                  ),
+                ),
+                const _MetricDivider(),
+                Expanded(
+                  child: _DashboardMetric(
+                    label: 'Sessions',
+                    value: sessionsToday.toString(),
+                    color: tealColor,
+                    icon: Icons.event_available_rounded,
+                  ),
+                ),
+                const _MetricDivider(),
+                Expanded(
+                  child: _DashboardMetric(
+                    label: 'New',
+                    value: newClientsToday.toString(),
+                    color: roseColor,
+                    icon: Icons.trending_up_rounded,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
-            'Recent Activity',
-            style: TextStyle(
-              color: inkColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
+          const SizedBox(height: 28),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Recent Activity',
+                  style: TextStyle(
+                    color: inkColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                '${recentActivity.length} total',
+                style: const TextStyle(
+                  color: mutedColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Column(
@@ -117,22 +164,6 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  String _averageBmi(List<Client> clients) {
-    final bmiValues = clients
-        .where((client) => client.weightKg > 0 && client.heightCm > 0)
-        .map(
-          (client) =>
-              client.weightKg /
-              ((client.heightCm / 100) * (client.heightCm / 100)),
-        )
-        .toList();
-
-    if (bmiValues.isEmpty) return '--';
-
-    final total = bmiValues.reduce((value, element) => value + element);
-    return (total / bmiValues.length).toStringAsFixed(1);
-  }
-
   bool _hasSessionToday(Client client) {
     if (client.schedule.trim().isEmpty) return false;
 
@@ -156,62 +187,69 @@ class DashboardTab extends StatelessWidget {
   }
 }
 
-class _DashboardMetricCard extends StatelessWidget {
+class _DashboardMetric extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final IconData icon;
 
-  const _DashboardMetricCard({
+  const _DashboardMetric({
     required this.label,
     required this.value,
     required this.color,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          height: 36,
+          width: 36,
+          decoration: BoxDecoration(
+            color: color.withAlpha((0.10 * 255).round()),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 19),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          value,
+          style: const TextStyle(
+            color: inkColor,
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: mutedColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricDivider extends StatelessWidget {
+  const _MetricDivider();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.43,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: cardBorderColor),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: premiumCardShadows,
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                height: 10,
-                width: 10,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: mutedColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: const TextStyle(
-              color: inkColor,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
+      height: 72,
+      width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: cardBorderColor,
     );
   }
 }
@@ -230,31 +268,48 @@ class _ActivityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: premiumCardShadows,
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           Container(
-            height: 52,
-            width: 52,
+            height: 48,
+            width: 48,
             decoration: BoxDecoration(
               color: activity.color.withAlpha((0.12 * 255).round()),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(activity.icon, color: activity.color),
+            child: Icon(activity.icon, color: activity.color, size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  activity.name,
-                  style: const TextStyle(
-                    color: inkColor,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        activity.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: inkColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      activity.time,
+                      style: const TextStyle(
+                        color: mutedColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   activity.subtitle,
                   maxLines: 1,
@@ -262,15 +317,6 @@ class _ActivityCard extends StatelessWidget {
                   style: const TextStyle(color: mutedColor),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            activity.time,
-            style: const TextStyle(
-              color: mutedColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],

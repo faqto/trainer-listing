@@ -10,13 +10,12 @@ class DefaultFirebaseOptions {
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return android;
       case TargetPlatform.iOS:
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
       case TargetPlatform.linux:
       case TargetPlatform.fuchsia:
-        throw UnsupportedError('Firebase is not configured for this platform.');
+        return android;
     }
   }
 

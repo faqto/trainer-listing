@@ -78,18 +78,18 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
             child: Column(
               children: [
-                const SizedBox(height: 24),
                 Container(
-                  height: 76,
-                  width: 76,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF),
                     borderRadius: BorderRadius.circular(22),
                   ),
-                  child: const Icon(
-                    Icons.fitness_center,
-                    size: 40,
-                    color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'assets/image/logo.png',
+                      fit: BoxFit.fill,
+                      height: 128,
+                      width: 128,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),

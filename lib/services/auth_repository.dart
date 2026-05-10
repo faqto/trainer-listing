@@ -4,9 +4,7 @@ abstract class AuthRepository {
   static AuthRepository instance = FirebaseAuthRepository();
 
   bool get hasCurrentUser;
-
   String? get currentUserId;
-
   String get currentUserName;
 
   Future<void> signIn({required String email, required String password});
@@ -15,6 +13,7 @@ abstract class AuthRepository {
     required String name,
     required String email,
     required String password,
+    required String lastName,
   });
 
   Future<void> signOut();
@@ -22,6 +21,8 @@ abstract class AuthRepository {
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuth get _auth => FirebaseAuth.instance;
+
+  static const String _separator = '|';
 
   @override
   bool get hasCurrentUser => _auth.currentUser != null;
@@ -33,13 +34,19 @@ class FirebaseAuthRepository implements AuthRepository {
   String get currentUserName {
     final user = _auth.currentUser;
     final displayName = user?.displayName?.trim();
+
     if (displayName != null && displayName.isNotEmpty) {
-      return displayName;
+      // New format: "lastName|fullName" → extract lastName before the separator
+      if (displayName.contains(_separator)) {
+        return displayName.split(_separator).first.trim();
+      }
+      // Legacy format fallback: grab first word
+      return displayName.split(RegExp(r'\s+')).first;
     }
 
     final email = user?.email?.trim();
     if (email != null && email.isNotEmpty) {
-      return _formatUserName(email.split('@').first);
+      return _formatUserName(email.split('@').first).split(' ').first;
     }
 
     return 'Trainer';
@@ -55,12 +62,14 @@ class FirebaseAuthRepository implements AuthRepository {
     required String name,
     required String email,
     required String password,
+    required String lastName,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
-    await credential.user?.updateDisplayName(name);
+    final displayName = '${lastName.trim()}$_separator${name.trim()}';
+    await credential.user?.updateDisplayName(displayName);
   }
 
   @override
@@ -72,7 +81,6 @@ class FirebaseAuthRepository implements AuthRepository {
 String _formatUserName(String value) {
   final cleaned = value.trim().replaceAll(RegExp(r'[._-]+'), ' ');
   if (cleaned.isEmpty) return 'Trainer';
-
   return cleaned
       .split(RegExp(r'\s+'))
       .map((part) {

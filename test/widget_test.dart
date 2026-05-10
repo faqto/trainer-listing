@@ -197,6 +197,9 @@ class _FakeAuthRepository implements AuthRepository {
   String get currentUserName => _name;
 
   @override
+  String get currentUserLastName => _name;
+
+  @override
   Future<void> signIn({required String email, required String password}) async {
     _signedIn = true;
     _name = _formatUserName(email.split('@').first);
@@ -245,7 +248,7 @@ class _FakeClientRepository implements ClientRepository {
         email: 'sarah@example.com',
         phone: '555-0101',
         age: 31,
-        gender: 'Female',
+        sex: 'Female',
         goal: 'Muscle gain',
         trainingProgram: 'Strength foundation',
         schedule: 'Mon Wed Fri',
@@ -265,7 +268,7 @@ class _FakeClientRepository implements ClientRepository {
         email: 'marcus@example.com',
         phone: '555-0102',
         age: 38,
-        gender: 'Male',
+        sex: 'Male',
         goal: 'Fat loss',
         trainingProgram: 'Conditioning block',
         schedule: 'Tue Thu',

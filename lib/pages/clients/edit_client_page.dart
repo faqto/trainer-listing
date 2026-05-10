@@ -28,7 +28,7 @@ class _EditClientPageState extends State<EditClientPage> {
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
 
-  static const List<String> goalOptions = [
+  static final List<String> goalOptions = [
     'Weight gain',
     'Weight loss',
     'Muscle gain',

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/client_schedule_picker.dart';
+import '../../widgets/client/client_schedule_picker.dart';
 import '../../helpers/client_page_helpers.dart';
+import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
 class EditFitnessRegimePage extends StatefulWidget {
   final String clientId;
@@ -51,6 +52,14 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
       });
       return;
     }
+
+    if (!await ConfirmationDialog.show(
+      context: context,
+      title: 'Save Regime',
+      content: 'Update fitness regime?',
+      confirmText: 'Save Regime',
+    ))
+      return;
 
     final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
 

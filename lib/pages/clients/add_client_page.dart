@@ -7,6 +7,7 @@ import '../../services/client_repository.dart';
 import '../../widgets/add client page/add_client_basic_info_section.dart';
 import '../../widgets/add client page/add_client_training_info_section.dart';
 import '../../helpers/client_page_helpers.dart';
+import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
 class AddClientPage extends StatefulWidget {
   const AddClientPage({super.key});
@@ -21,7 +22,7 @@ class _AddClientPageState extends State<AddClientPage> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _ageController = TextEditingController();
-  final _genderController = TextEditingController();
+  final _sexController = TextEditingController();
   final _goalController = TextEditingController();
 
   String? _selectedGoal;
@@ -30,7 +31,7 @@ class _AddClientPageState extends State<AddClientPage> {
   String? _scheduleError;
   bool _isSaving = false;
 
-  static const List<String> goalOptions = [
+  static final List<String> goalOptions = [
     'Weight gain',
     'Weight loss',
     'Muscle gain',
@@ -63,15 +64,23 @@ class _AddClientPageState extends State<AddClientPage> {
 
     final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
 
+    if (!await ConfirmationDialog.show(
+      context: context,
+      title: 'Add Client',
+      content: 'Add new client?',
+      confirmText: 'Add Client',
+    ))
+      return;
+
     final client = Client(
       id: ClientRepository.instance.createClientId(),
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
       age: int.tryParse(_ageController.text) ?? 0,
-      gender: _genderController.text.trim().isEmpty
+      sex: _sexController.text.trim().isEmpty
           ? 'Other'
-          : _genderController.text.trim(),
+          : _sexController.text.trim(),
       goal: goal,
       schedule: schedule,
       notes: '',
@@ -111,7 +120,7 @@ class _AddClientPageState extends State<AddClientPage> {
     _emailController.dispose();
     _phoneController.dispose();
     _ageController.dispose();
-    _genderController.dispose();
+    _sexController.dispose();
     _goalController.dispose();
     super.dispose();
   }
@@ -133,7 +142,7 @@ class _AddClientPageState extends State<AddClientPage> {
               AddClientBasicInfoSection(
                 nameController: _nameController,
                 ageController: _ageController,
-                genderController: _genderController,
+                sexController: _sexController,
                 emailController: _emailController,
                 phoneController: _phoneController,
               ),

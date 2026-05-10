@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../helpers/client_page_helpers.dart';
+import '../../helpers/client_page_helpers.dart';
 
 class ClientSchedulePicker extends StatelessWidget {
   final List<String> selectedDays;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
 import '../../helpers/client_page_helpers.dart';
+import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
 class UpdateBodyDetailsPage extends StatefulWidget {
   final String clientId;
@@ -46,6 +47,14 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
 
   Future<void> _saveMetrics() async {
     if (!_formKey.currentState!.validate() || _client == null) return;
+
+    if (!await ConfirmationDialog.show(
+      context: context,
+      title: 'Save Metrics',
+      content: 'Add new body metrics entry?',
+      confirmText: 'Save Metrics',
+    ))
+      return;
 
     final progressEntry = ProgressEntry(
       weightKg: parseMetric(_weightController.text),

@@ -174,7 +174,7 @@ class ClientCard extends StatelessWidget {
                                   runSpacing: space1,
                                   children: [
                                     StatusBadge(
-                                      label: client.gender,
+                                      label: client.sex,
                                       color: primaryColor,
                                     ),
                                     StatusBadge(

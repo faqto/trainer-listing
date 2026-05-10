@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../client_schedule_picker.dart';
+import '../client/client_schedule_picker.dart';
 import '../../helpers/client_page_helpers.dart';
 
 class EditClientFormFields extends StatelessWidget {

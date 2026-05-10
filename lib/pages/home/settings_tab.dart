@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 import 'home_constants.dart';
 
 class SettingsTab extends StatelessWidget {
@@ -37,7 +38,18 @@ class SettingsTab extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: onLogout,
+            onPressed: () async {
+              final shouldLogout = await ConfirmationDialog.show(
+                context: context,
+                title: 'Confirm Logout',
+                content: 'Are you sure you want to sign out?',
+                confirmText: 'Log Out',
+                cancelText: 'Cancel',
+                isDangerous: true,
+              );
+
+              if (shouldLogout) onLogout();
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: roseColor,
               foregroundColor: Colors.white,

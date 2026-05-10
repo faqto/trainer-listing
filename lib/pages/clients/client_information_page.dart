@@ -7,9 +7,9 @@ import '../../widgets/client_information_page/detail_block.dart';
 import '../../widgets/client_information_page/info_badge.dart';
 import '../../widgets/client_information_page/metric_row.dart';
 import '../../widgets/client_information_page/progress_entry_card.dart';
-import '../../widgets/client_section_card.dart';
-import '../../widgets/client_section_title.dart';
-import '../../widgets/client_sliver_app_bar.dart';
+import '../../widgets/client/client_section_card.dart';
+import '../../widgets/client/client_section_title.dart';
+import '../../widgets/client/client_sliver_app_bar.dart';
 import '../home/home_constants.dart';
 import '../../helpers/client_page_helpers.dart';
 
@@ -131,7 +131,7 @@ class _ClientInfoBuilder {
           runSpacing: 10,
           children: [
             InfoBadge(label: '${client.age} yrs'),
-            InfoBadge(label: client.gender),
+            InfoBadge(label: client.sex),
             InfoBadge(label: client.schedule),
           ],
         ),

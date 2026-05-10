@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../helpers/client_page_helpers.dart';
-import '../pages/home/home_constants.dart';
+import '../../helpers/client_page_helpers.dart';
+import '../../pages/home/home_constants.dart';
 
 class ClientSliverAppBar extends StatelessWidget {
   final String name;

@@ -62,7 +62,7 @@ class Client {
   final String email;
   final String phone;
   final int age;
-  final String gender;
+  final String sex;
   final String goal;
   final String notes;
   final String trainingProgram;
@@ -84,7 +84,7 @@ class Client {
     required this.email,
     required this.phone,
     this.age = 0,
-    this.gender = 'Not specified',
+    this.sex = 'Not specified',
     required this.goal,
     this.notes = '',
     this.trainingProgram = '',
@@ -118,7 +118,7 @@ class Client {
     String? email,
     String? phone,
     int? age,
-    String? gender,
+    String? sex,
     String? goal,
     String? notes,
     String? trainingProgram,
@@ -140,7 +140,7 @@ class Client {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       age: age ?? this.age,
-      gender: gender ?? this.gender,
+      sex: sex ?? this.sex,
       goal: goal ?? this.goal,
       notes: notes ?? this.notes,
       trainingProgram: trainingProgram ?? this.trainingProgram,
@@ -217,7 +217,7 @@ class Client {
       'email': email,
       'phone': phone,
       'age': age,
-      'gender': gender,
+      'sex': sex,
       'goal': goal,
       'notes': notes,
       'trainingProgram': trainingProgram,
@@ -242,7 +242,7 @@ class Client {
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
       age: map['age'] ?? 0,
-      gender: map['gender'] ?? 'Not specified',
+      sex: map['sex'] ?? 'Not specified',
       goal: map['goal'] ?? '',
       notes: map['notes'] ?? '',
       trainingProgram: map['trainingProgram'] ?? '',

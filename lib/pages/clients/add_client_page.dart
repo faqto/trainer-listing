@@ -69,8 +69,9 @@ class _AddClientPageState extends State<AddClientPage> {
       title: 'Add Client',
       content: 'Add new client?',
       confirmText: 'Add Client',
-    ))
+    )) {
       return;
+    }
 
     final client = Client(
       id: ClientRepository.instance.createClientId(),

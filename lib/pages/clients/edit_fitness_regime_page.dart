@@ -58,8 +58,9 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
       title: 'Save Regime',
       content: 'Update fitness regime?',
       confirmText: 'Save Regime',
-    ))
+    )) {
       return;
+    }
 
     final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
 

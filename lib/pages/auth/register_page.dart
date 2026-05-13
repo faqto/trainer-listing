@@ -37,8 +37,9 @@ class _RegisterPageState extends State<RegisterPage> {
       title: 'Confirm Account Creation',
       content: 'Create a new trainer account for $fullName?',
       confirmText: 'Create Account',
-    ))
+    )) {
       return;
+    }
 
     setState(() => _isLoading = true);
 

@@ -24,6 +24,7 @@ class ClientInformationPage extends StatefulWidget {
 
 class _ClientInformationPageState extends State<ClientInformationPage> {
   Client? _client;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -32,9 +33,17 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
   }
 
   Future<void> _loadClient() async {
-    _client = await ClientRepository.instance.getById(widget.clientId);
+    try {
+      _client = await ClientRepository.instance.getById(widget.clientId);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+
     if (!mounted) return;
-    setState(() {});
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _refresh() async {
@@ -43,6 +52,12 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
 
   @override
   Widget build(BuildContext context) {
+    // SHOW LOADING FIRST
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // ONLY SHOW NOT FOUND AFTER LOADING FINISHES
     if (_client == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Client Profile')),

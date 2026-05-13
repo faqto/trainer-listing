@@ -125,6 +125,8 @@ class _HomePageState extends State<HomePage> {
               return [
                 SliverAppBar(
                   pinned: true,
+                  floating: true,
+                  snap: true,
                   automaticallyImplyLeading: false,
                   expandedHeight: 86,
                   stretch: false,

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'welcome_page.dart';
 import 'package:trainer_listing/widgets/register_page/register_field.dart';
 import 'package:trainer_listing/widgets/register_page/register_footer.dart';
 import 'package:trainer_listing/widgets/register_page/register_header.dart';
@@ -49,7 +50,11 @@ class _RegisterPageState extends State<RegisterPage> {
         lastName: _lastNameController.text.trim(),
       );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.welcome,
+        arguments: WelcomeType.newUser,
+      );
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

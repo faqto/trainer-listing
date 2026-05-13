@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trainer_listing/pages/auth/welcome_page.dart';
 
 import '../pages/auth/login_page.dart';
 import '../pages/auth/register_page.dart';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String editClient = '/clients/edit';
   static const String editRegime = '/clients/edit-regime';
   static const String bodyDetails = '/clients/body-details';
+  static const String welcome = '/welcome';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final builder = routes[settings.name];
@@ -99,6 +101,13 @@ class AppRoutes {
         return const _InvalidRoutePage(title: 'Body Details');
       }
       return UpdateBodyDetailsPage(clientId: clientId);
+    },
+    welcome: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      final type = args == WelcomeType.newUser
+          ? WelcomeType.newUser
+          : WelcomeType.returningUser;
+      return WelcomePage(type: type);
     },
   };
 

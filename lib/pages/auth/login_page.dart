@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'welcome_page.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 
@@ -31,7 +31,11 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.welcome,
+        arguments: WelcomeType.returningUser,
+      );
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -87,28 +91,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: Image.asset(
                       'assets/image/logo.png',
                       fit: BoxFit.fill,
-                      height: 128,
-                      width: 128,
+                      height: 180,
+                      width: 180,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'FitED',
-                  style: TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Trainer workspace',
-                  style: TextStyle(
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+
                 const SizedBox(height: 32),
                 Container(
                   decoration: BoxDecoration(
@@ -130,17 +118,11 @@ class _LoginPageState extends State<LoginPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Welcome back',
+                          'Manage your clients and track their progress.',
                           style: TextStyle(
-                            color: Color(0xFF111827),
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                            fontSize: 12,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Sign in to manage your clients and sessions.',
-                          style: TextStyle(color: Color(0xFF64748B)),
                         ),
                         const SizedBox(height: 24),
                         TextFormField(

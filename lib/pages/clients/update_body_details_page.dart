@@ -16,6 +16,7 @@ class UpdateBodyDetailsPage extends StatefulWidget {
 
 class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   final _bodyFatController = TextEditingController();
@@ -23,7 +24,11 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
   final _hipsController = TextEditingController();
   final _chestController = TextEditingController();
   final _noteController = TextEditingController();
+
   Client? _client;
+
+  // ADDED
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -32,29 +37,46 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
   }
 
   Future<void> _loadClient() async {
-    _client = await ClientRepository.instance.getById(widget.clientId);
-    if (!mounted) return;
-    if (_client != null) {
-      _weightController.text = _client!.weightKg.toString();
-      _heightController.text = _client!.heightCm.toString();
-      _bodyFatController.text = _client!.bodyFatPercent.toString();
-      _waistController.text = _client!.waistCm.toString();
-      _hipsController.text = _client!.hipsCm.toString();
-      _chestController.text = _client!.chestCm.toString();
+    try {
+      _client = await ClientRepository.instance.getById(widget.clientId);
+
+      if (_client != null) {
+        _weightController.text = _client!.weightKg.toString();
+
+        _heightController.text = _client!.heightCm.toString();
+
+        _bodyFatController.text = _client!.bodyFatPercent.toString();
+
+        _waistController.text = _client!.waistCm.toString();
+
+        _hipsController.text = _client!.hipsCm.toString();
+
+        _chestController.text = _client!.chestCm.toString();
+      }
+    } catch (e) {
+      debugPrint(e.toString());
     }
-    setState(() {});
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _saveMetrics() async {
-    if (!_formKey.currentState!.validate() || _client == null) return;
+    if (!_formKey.currentState!.validate() || _client == null) {
+      return;
+    }
 
-    if (!await ConfirmationDialog.show(
+    final confirmed = await ConfirmationDialog.show(
       context: context,
       title: 'Save Metrics',
       content: 'Add new body metrics entry?',
       confirmText: 'Save Metrics',
-    ))
-      return;
+    );
+
+    if (!confirmed) return;
 
     final progressEntry = ProgressEntry(
       weightKg: parseMetric(_weightController.text),
@@ -77,6 +99,7 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
     );
 
     await ClientRepository.instance.updateClient(updated);
+
     if (mounted) {
       Navigator.pop(context, true);
     }
@@ -96,6 +119,12 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // LOADING SCREEN
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // CLIENT NOT FOUND
     if (_client == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Body Details')),
@@ -103,12 +132,16 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
       );
     }
 
+    // NORMAL PAGE
     return Scaffold(
       appBar: AppBar(title: const Text('Update Body Details')),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
+
         child: Form(
           key: _formKey,
+
           child: ListView(
             children: [
               TextFormField(
@@ -117,38 +150,50 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
                 keyboardType: TextInputType.number,
                 validator: (value) => requiredField(value, 'Enter weight'),
               ),
+
               clientFieldGap,
+
               TextFormField(
                 controller: _heightController,
                 decoration: const InputDecoration(labelText: 'Height (cm)'),
                 keyboardType: TextInputType.number,
                 validator: (value) => requiredField(value, 'Enter height'),
               ),
+
               clientFieldGap,
+
               TextFormField(
                 controller: _bodyFatController,
                 decoration: const InputDecoration(labelText: 'Body fat %'),
                 keyboardType: TextInputType.number,
               ),
+
               clientFieldGap,
+
               TextFormField(
                 controller: _waistController,
                 decoration: const InputDecoration(labelText: 'Waist (cm)'),
                 keyboardType: TextInputType.number,
               ),
+
               clientFieldGap,
+
               TextFormField(
                 controller: _hipsController,
                 decoration: const InputDecoration(labelText: 'Hips (cm)'),
                 keyboardType: TextInputType.number,
               ),
+
               clientFieldGap,
+
               TextFormField(
                 controller: _chestController,
                 decoration: const InputDecoration(labelText: 'Chest (cm)'),
                 keyboardType: TextInputType.number,
               ),
+
               clientFieldGap,
+
               TextFormField(
                 controller: _noteController,
                 decoration: const InputDecoration(
@@ -158,7 +203,9 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
                 minLines: 2,
                 maxLines: 3,
               ),
+
               const SizedBox(height: 24),
+
               ElevatedButton(
                 onPressed: _saveMetrics,
                 child: const Text('Save Metrics'),

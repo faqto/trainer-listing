@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../helpers/firebase_error_messages.dart';
 import '../../models/client_model.dart';
@@ -126,6 +125,8 @@ class _HomePageState extends State<HomePage> {
               return [
                 SliverAppBar(
                   pinned: true,
+                  floating: true,
+                  snap: true,
                   automaticallyImplyLeading: false,
                   expandedHeight: 86,
                   stretch: false,
@@ -134,10 +135,12 @@ class _HomePageState extends State<HomePage> {
                   titleSpacing: space2,
                   title: Text(
                     titles[_selectedIndex],
-                    style: GoogleFonts.bebasNeue(
+                    style: const TextStyle(
+                      fontFamily: 'BarlowCondensed',
                       fontSize: 28,
                       letterSpacing: 0,
                       color: Colors.white,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   flexibleSpace: const FlexibleSpaceBar(

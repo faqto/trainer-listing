@@ -208,6 +208,7 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<void> register({
     required String name,
+    required String lastName,
     required String email,
     required String password,
   }) async {

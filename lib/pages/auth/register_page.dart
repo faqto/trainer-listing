@@ -72,8 +72,8 @@ class _RegisterPageState extends State<RegisterPage> {
     final lastName = _capitalize(_lastNameController.text.trim());
     final initial = _initialController.text.trim().toUpperCase();
     return initial.isNotEmpty
-        ? '$lastName $firstName $initial'
-        : '$lastName $firstName';
+        ? '$lastName, $firstName $initial.'
+        : '$lastName, $firstName';
   }
 
   String _capitalize(String value) {

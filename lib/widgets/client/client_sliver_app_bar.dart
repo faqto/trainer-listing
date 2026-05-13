@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../helpers/client_page_helpers.dart';
 import '../../pages/home/home_constants.dart';
@@ -123,10 +122,12 @@ class _ClientAppBarCard extends StatelessWidget {
                       children: [
                         Text(
                           name,
-                          style: GoogleFonts.bebasNeue(
-                            color: Colors.white,
-                            fontSize: 24,
+                          style: const TextStyle(
+                            fontFamily: 'BarlowCondensed',
+                            fontSize: 28,
                             letterSpacing: 0,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 2),

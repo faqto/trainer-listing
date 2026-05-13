@@ -70,10 +70,7 @@ class FirestoreClientRepository implements ClientRepository {
   }
 
   @override
-  Future<void> resetForTesting() async {
-    // No-op for Firestore-backed repository. Use Firestore emulator or
-    // a separate test setup if real test isolation is required.
-  }
+  Future<void> resetForTesting() async {}
 
   @override
   String createClientId() {

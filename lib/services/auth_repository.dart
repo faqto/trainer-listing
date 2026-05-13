@@ -36,12 +36,10 @@ class FirebaseAuthRepository implements AuthRepository {
     final displayName = user?.displayName?.trim();
 
     if (displayName != null && displayName.isNotEmpty) {
-      // New format: "lastName|fullName" → extract lastName before the separator
       if (displayName.contains(_separator)) {
-        return displayName.split(_separator).first.trim();
+        return displayName.split(_separator).first.trim().replaceAll(',', '');
       }
-      // Legacy format fallback: grab first word
-      return displayName.split(RegExp(r'\s+')).first;
+      return displayName.split(RegExp(r'\s+')).first.replaceAll(',', '');
     }
 
     final email = user?.email?.trim();

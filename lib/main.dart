@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'firebase_options.dart';
 import 'routes/app_routes.dart';
@@ -20,7 +19,13 @@ void main() async {
     debugPrint('Firebase failed to initialize.');
     debugPrint('$error');
     debugPrintStack(stackTrace: stackTrace);
-    runApp(const MaterialApp(home: Scaffold(body: Center(child: Text('Firebase initialization failed.')))));
+    runApp(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('Firebase initialization failed.')),
+        ),
+      ),
+    );
     return;
   }
   runApp(const MyApp());
@@ -37,14 +42,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'FitEd Trainer',
         theme: ThemeData(
-          textTheme: GoogleFonts.dmSansTextTheme().copyWith(
-            displayLarge: GoogleFonts.bebasNeue(),
-            displayMedium: GoogleFonts.bebasNeue(),
-            displaySmall: GoogleFonts.bebasNeue(),
-            headlineLarge: GoogleFonts.bebasNeue(),
-            headlineMedium: GoogleFonts.bebasNeue(),
-            headlineSmall: GoogleFonts.bebasNeue(),
-          ),
+          fontFamily: 'NunitoSans',
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF2563EB),
             primary: const Color(0xFF1E40AF),

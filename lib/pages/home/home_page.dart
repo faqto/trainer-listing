@@ -3,9 +3,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../helpers/firebase_error_messages.dart';
+import '../../models/activity_event.dart';
 import '../../models/client_model.dart';
 import '../../models/home_activity.dart';
 import '../../routes/app_routes.dart';
+import '../../services/activity_repository.dart';
 import '../../services/auth_repository.dart';
 import '../../services/client_repository.dart';
 import '../../widgets/home/home_load_error.dart';
@@ -26,6 +28,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   late Future<List<Client>> _clientsFuture;
+  late Future<List<ActivityEvent>> _activityFuture;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadClients() async {
     setState(() {
       _clientsFuture = ClientRepository.instance.clients;
+      _activityFuture = ActivityRepository.instance.getRecent();
     });
   }
 
@@ -71,8 +75,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Client>>(
-      future: _clientsFuture,
+    return FutureBuilder<(List<Client>, List<ActivityEvent>)>(
+      future: Future.wait([_clientsFuture, _activityFuture]).then(
+        (results) =>
+            (results[0] as List<Client>, results[1] as List<ActivityEvent>),
+      ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -88,14 +95,22 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         }
-        final clients = snapshot.data ?? [];
-        final recentActivities = clients.map((client) {
+        final clients = snapshot.data?.$1 ?? [];
+        final activityEvents = snapshot.data?.$2 ?? [];
+
+        // Check for missed sessions after data loads
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await ActivityRepository.instance.checkAndLogMissedSessions(clients);
+        });
+
+        final recentActivities = activityEvents.map((event) {
           return HomeActivity(
-            name: client.name,
-            subtitle: client.goal,
-            time: 'Joined ${client.joinDateLabel}',
-            icon: Icons.timer,
-            color: Colors.blueAccent,
+            name: event.clientName,
+            subtitle: event.description,
+            time: event.timeAgoLabel,
+            icon: event.icon,
+            color: event.color,
+            event: event,
           );
         }).toList();
 
@@ -106,6 +121,8 @@ class _HomePageState extends State<HomePage> {
             recentActivity: recentActivities,
             trainerName: AuthRepository.instance.currentUserName,
             onAddClient: _openAddClient,
+            onActivityResolved: _loadClients,
+            onOpenClient: (id) => _openClientDetails(id),
           ),
           PlansTab(clients: clients, onOpenClient: _openClientDetails),
           ClientsTab(

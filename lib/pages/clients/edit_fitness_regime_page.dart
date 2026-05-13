@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/activity_event.dart';
 import '../../models/client_model.dart';
+import '../../services/activity_repository.dart';
 import '../../services/client_repository.dart';
 import '../../widgets/client/client_schedule_picker.dart';
 import '../../helpers/client_page_helpers.dart';
@@ -24,6 +26,8 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
+  int _durationHours = 0;
+  int _durationMinutes = 0;
 
   @override
   void initState() {
@@ -39,6 +43,9 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
       _scheduleTime = parseScheduleTime(_client!.schedule);
       _regimeController.text = _client!.fitnessRegime;
       _cardioController.text = _client!.cardioPlan;
+      final totalMin = parseScheduleDurationMinutes(_client!.schedule);
+      _durationHours = totalMin ~/ 60;
+      _durationMinutes = totalMin % 60;
     }
     setState(() {});
   }
@@ -62,7 +69,13 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
       return;
     }
 
-    final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
+    final schedule = formatScheduleDays(
+      _selectedDays,
+      _scheduleTime,
+      context,
+      durationHours: _durationHours,
+      durationMinutes: _durationMinutes,
+    );
 
     final updated = _client!.copyWith(
       schedule: schedule,
@@ -71,6 +84,19 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
     );
 
     await ClientRepository.instance.updateClient(updated);
+
+    await ActivityRepository.instance.log(
+      ActivityEvent(
+        id: '',
+        type: ActivityType.regimeChanged,
+        clientId: _client!.id,
+        clientName: _client!.name,
+        description:
+            'Fitness regime updated — ${_regimeController.text.trim()}',
+        timestamp: DateTime.now(),
+      ),
+    );
+
     if (mounted) {
       Navigator.pop(context, true);
     }
@@ -103,9 +129,14 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
               selectedDays: _selectedDays,
               selectedTime: _scheduleTime,
               errorText: _scheduleError,
+              durationHours: _durationHours,
+              durationMinutes: _durationMinutes,
               onDaysChanged: (days) => setState(() => _selectedDays = days),
               onTimeChanged: (time) => setState(() => _scheduleTime = time),
               onErrorChanged: (error) => setState(() => _scheduleError = error),
+              onDurationHoursChanged: (h) => setState(() => _durationHours = h),
+              onDurationMinutesChanged: (m) =>
+                  setState(() => _durationMinutes = m),
             ),
             clientFieldGap,
             TextFormField(

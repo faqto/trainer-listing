@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/activity_event.dart';
 import '../../models/client_model.dart';
+import '../../services/activity_repository.dart';
 import '../../services/client_repository.dart';
 import '../../helpers/client_page_helpers.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
@@ -99,6 +101,18 @@ class _UpdateBodyDetailsPageState extends State<UpdateBodyDetailsPage> {
     );
 
     await ClientRepository.instance.updateClient(updated);
+
+    await ActivityRepository.instance.log(
+      ActivityEvent(
+        id: '',
+        type: ActivityType.bodyUpdated,
+        clientId: _client!.id,
+        clientName: _client!.name,
+        description:
+            'Body metrics updated — weight: ${progressEntry.weightKg} kg',
+        timestamp: DateTime.now(),
+      ),
+    );
 
     if (mounted) {
       Navigator.pop(context, true);

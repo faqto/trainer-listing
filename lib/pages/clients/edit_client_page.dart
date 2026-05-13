@@ -27,6 +27,8 @@ class _EditClientPageState extends State<EditClientPage> {
   List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
+  int _durationHours = 0;
+  int _durationMinutes = 0;
 
   static final List<String> goalOptions = [
     'Weight gain',
@@ -65,6 +67,9 @@ class _EditClientPageState extends State<EditClientPage> {
 
       _selectedDays = parseScheduleDays(_client!.schedule);
       _scheduleTime = parseScheduleTime(_client!.schedule);
+      final totalMin = parseScheduleDurationMinutes(_client!.schedule);
+      _durationHours = totalMin ~/ 60;
+      _durationMinutes = totalMin % 60;
     }
     setState(() {});
   }
@@ -87,7 +92,13 @@ class _EditClientPageState extends State<EditClientPage> {
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
-    final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
+    final schedule = formatScheduleDays(
+      _selectedDays,
+      _scheduleTime,
+      context,
+      durationHours: _durationHours,
+      durationMinutes: _durationMinutes,
+    );
 
     final updated = _client!.copyWith(
       name: _nameController.text.trim(),
@@ -178,11 +189,17 @@ class _EditClientPageState extends State<EditClientPage> {
                 selectedDays: _selectedDays,
                 scheduleTime: _scheduleTime,
                 scheduleError: _scheduleError,
+                durationHours: _durationHours,
+                durationMinutes: _durationMinutes,
                 onGoalChanged: (value) => setState(() => _selectedGoal = value),
                 onDaysChanged: (days) => setState(() => _selectedDays = days),
                 onTimeChanged: (time) => setState(() => _scheduleTime = time),
                 onErrorChanged: (error) =>
                     setState(() => _scheduleError = error),
+                onDurationHoursChanged: (h) =>
+                    setState(() => _durationHours = h),
+                onDurationMinutesChanged: (m) =>
+                    setState(() => _durationMinutes = m),
               ),
               const SizedBox(height: 24),
               ElevatedButton(

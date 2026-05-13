@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../models/activity_event.dart';
 import '../../models/client_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/activity_repository.dart';
 import '../../services/client_repository.dart';
+import '../../helpers/client_metrics.dart';
 import '../../widgets/client_information_page/detail_block.dart';
 import '../../widgets/client_information_page/info_badge.dart';
 import '../../widgets/client_information_page/metric_row.dart';
@@ -10,6 +13,7 @@ import '../../widgets/client_information_page/progress_entry_card.dart';
 import '../../widgets/client/client_section_card.dart';
 import '../../widgets/client/client_section_title.dart';
 import '../../widgets/client/client_sliver_app_bar.dart';
+import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 import '../home/home_constants.dart';
 import '../../helpers/client_page_helpers.dart';
 
@@ -133,6 +137,10 @@ class _ClientInfoBuilder {
           _buildEditClientButton(),
           const SizedBox(height: 12),
           _buildUpdateBodyMetricsButton(),
+          if (hasSessionToday(client)) ...[
+            const SizedBox(height: 12),
+            _buildEndSessionButton(),
+          ],
         ],
       ),
     );
@@ -251,6 +259,39 @@ class _ClientInfoBuilder {
         const SizedBox(height: 12),
         Text(client.notes.isEmpty ? 'No notes available.' : client.notes),
       ],
+    );
+  }
+
+  Widget _buildEndSessionButton() {
+    return FilledButton.icon(
+      onPressed: () async {
+        final confirmed = await ConfirmationDialog.show(
+          context: context,
+          title: 'End Session',
+          content: 'Are you sure you want to end ${client.name}\'s session?',
+          confirmText: 'End Session',
+        );
+        if (!confirmed) return;
+
+        await ActivityRepository.instance.logSessionCompleted(
+          client,
+          DateTime.now(),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Session ended and logged!'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+        await onRefresh();
+      },
+      icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+      label: const Text('End Session'),
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF10B981),
+        minimumSize: const Size.fromHeight(56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
     );
   }
 

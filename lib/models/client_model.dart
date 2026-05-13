@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ProgressEntry {
   final DateTime date;
   final double weightKg;
@@ -160,6 +162,71 @@ class Client {
 
   String get joinDateLabel {
     return _formatDate(joinDate);
+  }
+
+  /// Returns the scheduled end time for today's session, or null if not applicable.
+  DateTime? get scheduledEndTime {
+    final startTime = _parseScheduleTimeFromSchedule(schedule);
+    if (startTime == null) return null;
+    final durationMin = _parseScheduleDurationFromSchedule(schedule);
+    if (durationMin <= 0) return null;
+    final now = DateTime.now();
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      startTime.hour,
+      startTime.minute,
+    );
+    return start.add(Duration(minutes: durationMin));
+  }
+
+  /// True if the current time is between session start and scheduled end.
+  bool get isSessionActive {
+    final startTime = _parseScheduleTimeFromSchedule(schedule);
+    if (startTime == null) return false;
+    final durationMin = _parseScheduleDurationFromSchedule(schedule);
+    if (durationMin <= 0) return false;
+    final now = DateTime.now();
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      startTime.hour,
+      startTime.minute,
+    );
+    final end = start.add(Duration(minutes: durationMin));
+    return now.isAfter(start) && now.isBefore(end);
+  }
+
+  static TimeOfDay? _parseScheduleTimeFromSchedule(String schedule) {
+    final parts = schedule.split(' at ');
+    if (parts.length < 2) return null;
+    // strip the "for Xh Ym" part if present
+    final timePart = parts[1].split(' for ').first.trim();
+    final match = RegExp(
+      r'^(\d{1,2}):(\d{2})\s*([AP]M)?$',
+      caseSensitive: false,
+    ).firstMatch(timePart);
+    if (match == null) return null;
+    var hour = int.tryParse(match.group(1)!);
+    final minute = int.tryParse(match.group(2)!);
+    final marker = match.group(3)?.toUpperCase();
+    if (hour == null || minute == null) return null;
+    if (marker == 'PM' && hour < 12) hour += 12;
+    if (marker == 'AM' && hour == 12) hour = 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  static int _parseScheduleDurationFromSchedule(String schedule) {
+    final forMatch = RegExp(r'for (.+)$').firstMatch(schedule);
+    if (forMatch == null) return 0;
+    final durStr = forMatch.group(1)!.trim();
+    final hMatch = RegExp(r'(\d+)h').firstMatch(durStr);
+    final mMatch = RegExp(r'(\d+)m').firstMatch(durStr);
+    final hours = hMatch != null ? int.tryParse(hMatch.group(1)!) ?? 0 : 0;
+    final minutes = mMatch != null ? int.tryParse(mMatch.group(1)!) ?? 0 : 0;
+    return hours * 60 + minutes;
   }
 
   double? get bmi {

@@ -24,11 +24,35 @@ List<String> parseScheduleDays(String schedule) {
 String formatScheduleDays(
   List<String> days,
   TimeOfDay? time,
-  BuildContext context,
-) {
+  BuildContext context, {
+  int durationHours = 0,
+  int durationMinutes = 0,
+}) {
   if (days.isEmpty) return '';
   final base = days.join(' / ');
-  return time == null ? base : '$base at ${time.format(context)}';
+  if (time == null) return base;
+  final timeStr = '$base at ${time.format(context)}';
+  final totalMinutes = durationHours * 60 + durationMinutes;
+  if (totalMinutes <= 0) return timeStr;
+  final durStr = durationHours > 0 && durationMinutes > 0
+      ? '${durationHours}h ${durationMinutes}m'
+      : durationHours > 0
+      ? '${durationHours}h'
+      : '${durationMinutes}m';
+  return '$timeStr for $durStr';
+}
+
+/// Parses duration from schedule string like "Mon / Wed at 6:00 PM for 1h 30m"
+/// Returns duration in minutes, or 0 if not found.
+int parseScheduleDurationMinutes(String schedule) {
+  final forMatch = RegExp(r'for (.+)$').firstMatch(schedule);
+  if (forMatch == null) return 0;
+  final durStr = forMatch.group(1)!.trim();
+  final hMatch = RegExp(r'(\d+)h').firstMatch(durStr);
+  final mMatch = RegExp(r'(\d+)m').firstMatch(durStr);
+  final hours = hMatch != null ? int.tryParse(hMatch.group(1)!) ?? 0 : 0;
+  final minutes = mMatch != null ? int.tryParse(mMatch.group(1)!) ?? 0 : 0;
+  return hours * 60 + minutes;
 }
 
 double parseMetric(String value) {

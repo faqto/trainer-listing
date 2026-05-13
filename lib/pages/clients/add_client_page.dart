@@ -29,6 +29,8 @@ class _AddClientPageState extends State<AddClientPage> {
   final List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
+  int _durationHours = 0;
+  int _durationMinutes = 0;
   bool _isSaving = false;
 
   static final List<String> goalOptions = [
@@ -62,7 +64,13 @@ class _AddClientPageState extends State<AddClientPage> {
         ? 'Others: ${_goalController.text.trim()}'
         : _selectedGoal!;
 
-    final schedule = formatScheduleDays(_selectedDays, _scheduleTime, context);
+    final schedule = formatScheduleDays(
+      _selectedDays,
+      _scheduleTime,
+      context,
+      durationHours: _durationHours,
+      durationMinutes: _durationMinutes,
+    );
 
     if (!await ConfirmationDialog.show(
       context: context,
@@ -155,6 +163,8 @@ class _AddClientPageState extends State<AddClientPage> {
                 selectedDays: _selectedDays,
                 scheduleTime: _scheduleTime,
                 scheduleError: _scheduleError,
+                durationHours: _durationHours,
+                durationMinutes: _durationMinutes,
                 onGoalChanged: (value) => setState(() => _selectedGoal = value),
                 onDaysChanged: (days) => setState(() {
                   _selectedDays
@@ -164,6 +174,10 @@ class _AddClientPageState extends State<AddClientPage> {
                 onTimeChanged: (time) => setState(() => _scheduleTime = time),
                 onErrorChanged: (error) =>
                     setState(() => _scheduleError = error),
+                onDurationHoursChanged: (h) =>
+                    setState(() => _durationHours = h),
+                onDurationMinutesChanged: (m) =>
+                    setState(() => _durationMinutes = m),
               ),
               const SizedBox(height: 24),
               ElevatedButton(

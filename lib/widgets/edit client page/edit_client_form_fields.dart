@@ -14,10 +14,14 @@ class EditClientFormFields extends StatelessWidget {
   final List<String> selectedDays;
   final TimeOfDay? scheduleTime;
   final String? scheduleError;
+  final int durationHours;
+  final int durationMinutes;
   final ValueChanged<String?> onGoalChanged;
   final ValueChanged<List<String>> onDaysChanged;
   final ValueChanged<TimeOfDay?> onTimeChanged;
   final ValueChanged<String?> onErrorChanged;
+  final ValueChanged<int> onDurationHoursChanged;
+  final ValueChanged<int> onDurationMinutesChanged;
 
   const EditClientFormFields({
     super.key,
@@ -31,10 +35,14 @@ class EditClientFormFields extends StatelessWidget {
     required this.selectedDays,
     required this.scheduleTime,
     required this.scheduleError,
+    this.durationHours = 0,
+    this.durationMinutes = 0,
     required this.onGoalChanged,
     required this.onDaysChanged,
     required this.onTimeChanged,
     required this.onErrorChanged,
+    required this.onDurationHoursChanged,
+    required this.onDurationMinutesChanged,
   });
 
   @override
@@ -88,9 +96,13 @@ class EditClientFormFields extends StatelessWidget {
           selectedDays: selectedDays,
           selectedTime: scheduleTime,
           errorText: scheduleError,
+          durationHours: durationHours,
+          durationMinutes: durationMinutes,
           onDaysChanged: onDaysChanged,
           onTimeChanged: onTimeChanged,
           onErrorChanged: onErrorChanged,
+          onDurationHoursChanged: onDurationHoursChanged,
+          onDurationMinutesChanged: onDurationMinutesChanged,
         ),
         clientFieldGap,
         TextFormField(

@@ -6,18 +6,26 @@ class ClientSchedulePicker extends StatelessWidget {
   final List<String> selectedDays;
   final TimeOfDay? selectedTime;
   final String? errorText;
+  final int durationHours;
+  final int durationMinutes;
   final ValueChanged<List<String>> onDaysChanged;
   final ValueChanged<TimeOfDay?> onTimeChanged;
   final ValueChanged<String?> onErrorChanged;
+  final ValueChanged<int> onDurationHoursChanged;
+  final ValueChanged<int> onDurationMinutesChanged;
 
   const ClientSchedulePicker({
     super.key,
     required this.selectedDays,
     required this.selectedTime,
     required this.errorText,
+    this.durationHours = 0,
+    this.durationMinutes = 0,
     required this.onDaysChanged,
     required this.onTimeChanged,
     required this.onErrorChanged,
+    required this.onDurationHoursChanged,
+    required this.onDurationMinutesChanged,
   });
 
   @override
@@ -77,6 +85,51 @@ class ClientSchedulePicker extends StatelessWidget {
               ),
               child: Text(selectedTime?.format(context) ?? 'Select time'),
             ),
+          ),
+          clientFieldGap,
+          const Text(
+            'Session Duration',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: durationHours,
+                  decoration: InputDecoration(
+                    labelText: 'Hours',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  items: List.generate(5, (i) => i)
+                      .map(
+                        (h) => DropdownMenuItem(value: h, child: Text('${h}h')),
+                      )
+                      .toList(),
+                  onChanged: (v) => onDurationHoursChanged(v ?? 0),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: durationMinutes,
+                  decoration: InputDecoration(
+                    labelText: 'Minutes',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  items: [0, 15, 30, 45]
+                      .map(
+                        (m) => DropdownMenuItem(value: m, child: Text('${m}m')),
+                      )
+                      .toList(),
+                  onChanged: (v) => onDurationMinutesChanged(v ?? 0),
+                ),
+              ),
+            ],
           ),
         ],
       ],

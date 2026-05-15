@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-
+import 'package:trainer_listing/widgets/client/edit%20client%20page/edit_client_form_fields.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/edit client page/edit_client_form_fields.dart';
 import '../../helpers/client_page_helpers.dart';
+import '../../helpers/edit_page_mixin.dart';
+import '../../widgets/loading_overlay.dart';
 
 class EditClientPage extends StatefulWidget {
   final String clientId;
-
   const EditClientPage({super.key, required this.clientId});
 
   @override
   State<EditClientPage> createState() => _EditClientPageState();
 }
 
-class _EditClientPageState extends State<EditClientPage> {
+class _EditClientPageState extends State<EditClientPage> with EditPageMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -22,6 +22,8 @@ class _EditClientPageState extends State<EditClientPage> {
   final _goalController = TextEditingController();
   final _notesController = TextEditingController();
   Client? _client;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   String? _selectedGoal;
   List<String> _selectedDays = [];
@@ -45,33 +47,47 @@ class _EditClientPageState extends State<EditClientPage> {
   }
 
   Future<void> _loadClient() async {
-    _client = await ClientRepository.instance.getById(widget.clientId);
-    if (!mounted) return;
-    if (_client != null) {
-      _nameController.text = _client!.name;
-      _emailController.text = _client!.email;
-      _phoneController.text = _client!.phone;
-      _notesController.text = _client!.notes;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-      if (_client!.goal.startsWith('Others:')) {
-        _selectedGoal = otherGoalOption;
-        _goalController.text = _client!.goal.replaceFirst('Others: ', '');
-      } else {
-        _selectedGoal = goalOptions.contains(_client!.goal)
-            ? _client!.goal
-            : otherGoalOption;
-        if (_selectedGoal == otherGoalOption) {
-          _goalController.text = _client!.goal;
+    try {
+      _client = await ClientRepository.instance.getById(widget.clientId);
+      if (!mounted) return;
+
+      if (_client != null) {
+        _nameController.text = _client!.name;
+        _emailController.text = _client!.email;
+        _phoneController.text = _client!.phone;
+        _notesController.text = _client!.notes;
+
+        if (_client!.goal.startsWith('Others:')) {
+          _selectedGoal = otherGoalOption;
+          _goalController.text = _client!.goal.replaceFirst('Others: ', '');
+        } else {
+          _selectedGoal = goalOptions.contains(_client!.goal)
+              ? _client!.goal
+              : otherGoalOption;
+          if (_selectedGoal == otherGoalOption) {
+            _goalController.text = _client!.goal;
+          }
         }
-      }
 
-      _selectedDays = parseScheduleDays(_client!.schedule);
-      _scheduleTime = parseScheduleTime(_client!.schedule);
-      final totalMin = parseScheduleDurationMinutes(_client!.schedule);
-      _durationHours = totalMin ~/ 60;
-      _durationMinutes = totalMin % 60;
+        _selectedDays = parseScheduleDays(_client!.schedule);
+        _scheduleTime = parseScheduleTime(_client!.schedule);
+        final totalMin = parseScheduleDurationMinutes(_client!.schedule);
+        _durationHours = totalMin ~/ 60;
+        _durationMinutes = totalMin % 60;
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      _errorMessage = 'Failed to load client data.';
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    setState(() {});
   }
 
   Future<void> _saveClient() async {
@@ -88,31 +104,34 @@ class _EditClientPageState extends State<EditClientPage> {
       return;
     }
 
-    final goal = _selectedGoal == otherGoalOption
-        ? 'Others: ${_goalController.text.trim()}'
-        : _selectedGoal!;
+    await executeWithLoading(() async {
+      final goal = _selectedGoal == otherGoalOption
+          ? 'Others: ${_goalController.text.trim()}'
+          : _selectedGoal!;
 
-    final schedule = formatScheduleDays(
-      _selectedDays,
-      _scheduleTime,
-      context,
-      durationHours: _durationHours,
-      durationMinutes: _durationMinutes,
-    );
+      final schedule = formatScheduleDays(
+        _selectedDays,
+        _scheduleTime,
+        context,
+        durationHours: _durationHours,
+        durationMinutes: _durationMinutes,
+      );
 
-    final updated = _client!.copyWith(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-      goal: goal,
-      schedule: schedule,
-      notes: _notesController.text.trim(),
-    );
+      final updated = _client!.copyWith(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        goal: goal,
+        schedule: schedule,
+        notes: _notesController.text.trim(),
+      );
 
-    await ClientRepository.instance.updateClient(updated);
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
+      await ClientRepository.instance.updateClient(updated);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    });
   }
 
   Future<void> _deleteClient() async {
@@ -138,10 +157,27 @@ class _EditClientPageState extends State<EditClientPage> {
       },
     );
 
-    if (confirmed == true) {
-      await ClientRepository.instance.deleteClient(_client!.id);
+    if (confirmed != true) return;
+
+    final clientId = _client!.id;
+
+    try {
+      await executeWithLoading(() async {
+        await ClientRepository.instance.deleteClient(clientId);
+
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      });
+    } catch (e) {
+      debugPrint('Error deleting client: $e');
       if (mounted) {
-        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete client: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -158,10 +194,35 @@ class _EditClientPageState extends State<EditClientPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_client == null) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Edit Client')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_client == null || _errorMessage != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Edit Client')),
-        body: const Center(child: Text('Client not found.')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage ?? 'Client not found.',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadClient,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -169,44 +230,57 @@ class _EditClientPageState extends State<EditClientPage> {
       appBar: AppBar(
         title: const Text('Edit Client'),
         actions: [
-          IconButton(icon: const Icon(Icons.delete), onPressed: _deleteClient),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: isSaving ? null : _deleteClient,
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              EditClientFormFields(
-                nameController: _nameController,
-                emailController: _emailController,
-                phoneController: _phoneController,
-                goalController: _goalController,
-                notesController: _notesController,
-                goalOptions: goalOptions,
-                selectedGoal: _selectedGoal,
-                selectedDays: _selectedDays,
-                scheduleTime: _scheduleTime,
-                scheduleError: _scheduleError,
-                durationHours: _durationHours,
-                durationMinutes: _durationMinutes,
-                onGoalChanged: (value) => setState(() => _selectedGoal = value),
-                onDaysChanged: (days) => setState(() => _selectedDays = days),
-                onTimeChanged: (time) => setState(() => _scheduleTime = time),
-                onErrorChanged: (error) =>
-                    setState(() => _scheduleError = error),
-                onDurationHoursChanged: (h) =>
-                    setState(() => _durationHours = h),
-                onDurationMinutesChanged: (m) =>
-                    setState(() => _durationMinutes = m),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _saveClient,
-                child: const Text('Save Changes'),
-              ),
-            ],
+      body: LoadingOverlay(
+        isLoading: isSaving,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                EditClientFormFields(
+                  nameController: _nameController,
+                  emailController: _emailController,
+                  phoneController: _phoneController,
+                  goalController: _goalController,
+                  notesController: _notesController,
+                  goalOptions: goalOptions,
+                  selectedGoal: _selectedGoal,
+                  selectedDays: _selectedDays,
+                  scheduleTime: _scheduleTime,
+                  scheduleError: _scheduleError,
+                  durationHours: _durationHours,
+                  durationMinutes: _durationMinutes,
+                  onGoalChanged: (value) =>
+                      setState(() => _selectedGoal = value),
+                  onDaysChanged: (days) => setState(() => _selectedDays = days),
+                  onTimeChanged: (time) => setState(() => _scheduleTime = time),
+                  onErrorChanged: (error) =>
+                      setState(() => _scheduleError = error),
+                  onDurationHoursChanged: (h) =>
+                      setState(() => _durationHours = h),
+                  onDurationMinutesChanged: (m) =>
+                      setState(() => _durationMinutes = m),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: isSaving ? null : _saveClient,
+                  child: isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save Changes'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

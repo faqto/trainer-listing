@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../client/client_schedule_picker.dart';
-import '../client/client_section_card.dart';
-import '../client/client_section_title.dart';
-import '../../helpers/client_page_helpers.dart';
+import '../client_schedule_picker.dart';
+import '../client_section_card.dart';
+import '../client_section_title.dart';
+import '../../../helpers/client_page_helpers.dart';
 
 class AddClientTrainingInfoSection extends StatelessWidget {
   final List<String> goalOptions;

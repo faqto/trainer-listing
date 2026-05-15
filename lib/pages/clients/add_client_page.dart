@@ -4,8 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import '../../helpers/firebase_error_messages.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/add client page/add_client_basic_info_section.dart';
-import '../../widgets/add client page/add_client_training_info_section.dart';
+import '../../widgets/client/add client page/add_client_basic_info_section.dart';
+import '../../widgets/client/add client page/add_client_training_info_section.dart';
 import '../../helpers/client_page_helpers.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 

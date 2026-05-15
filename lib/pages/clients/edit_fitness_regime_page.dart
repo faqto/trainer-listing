@@ -1,28 +1,35 @@
 import 'package:flutter/material.dart';
-
-import '../../models/activity_event.dart';
+import 'package:trainer_listing/helpers/client_page_helpers.dart';
+import 'package:trainer_listing/models/activity_event.dart';
+import 'package:trainer_listing/widgets/client/edit_fitness_regime_page/regime_error_view.dart';
+import 'package:trainer_listing/widgets/client/edit_fitness_regime_page/regime_form_fields.dart';
+import 'package:trainer_listing/widgets/client/edit_fitness_regime_page/regime_loading_view.dart';
+import 'package:trainer_listing/widgets/confirmation_dialog/confirmation_dialog.dart';
 import '../../models/client_model.dart';
-import '../../services/activity_repository.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/client/client_schedule_picker.dart';
-import '../../helpers/client_page_helpers.dart';
-import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
+import '../../services/activity_repository.dart';
+import '../../helpers/edit_page_mixin.dart';
+import '../../widgets/loading_overlay.dart';
 
 class EditFitnessRegimePage extends StatefulWidget {
   final String clientId;
-
   const EditFitnessRegimePage({super.key, required this.clientId});
 
   @override
   State<EditFitnessRegimePage> createState() => _EditFitnessRegimePageState();
 }
 
-class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
+class _EditFitnessRegimePageState extends State<EditFitnessRegimePage>
+    with EditPageMixin {
   final _formKey = GlobalKey<FormState>();
   final _regimeController = TextEditingController();
   final _cardioController = TextEditingController();
-  Client? _client;
 
+  Client? _client;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  // Schedule data
   List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
@@ -36,39 +43,67 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
   }
 
   Future<void> _loadClient() async {
-    _client = await ClientRepository.instance.getById(widget.clientId);
-    if (!mounted) return;
-    if (_client != null) {
-      _selectedDays = parseScheduleDays(_client!.schedule);
-      _scheduleTime = parseScheduleTime(_client!.schedule);
-      _regimeController.text = _client!.fitnessRegime;
-      _cardioController.text = _client!.cardioPlan;
-      final totalMin = parseScheduleDurationMinutes(_client!.schedule);
-      _durationHours = totalMin ~/ 60;
-      _durationMinutes = totalMin % 60;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      _client = await ClientRepository.instance.getById(widget.clientId);
+      if (!mounted) return;
+      _populateFormData();
+    } catch (e) {
+      debugPrint(e.toString());
+      _errorMessage = 'Failed to load client data.';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() {});
+  }
+
+  void _populateFormData() {
+    if (_client == null) return;
+
+    _selectedDays = parseScheduleDays(_client!.schedule);
+    _scheduleTime = parseScheduleTime(_client!.schedule);
+    _regimeController.text = _client!.fitnessRegime;
+    _cardioController.text = _client!.cardioPlan;
+
+    final totalMin = parseScheduleDurationMinutes(_client!.schedule);
+    _durationHours = totalMin ~/ 60;
+    _durationMinutes = totalMin % 60;
   }
 
   Future<void> _saveRegime() async {
-    if (!_formKey.currentState!.validate() || _client == null) return;
+    if (!_validateForm()) return;
+    if (!await _confirmSave()) return;
+
+    await executeWithLoading(() async {
+      await _updateClient();
+      await _logActivity();
+      if (mounted) Navigator.pop(context, true);
+    });
+  }
+
+  bool _validateForm() {
+    if (!_formKey.currentState!.validate() || _client == null) return false;
 
     if (_selectedDays.isNotEmpty && _scheduleTime == null) {
-      setState(() {
-        _scheduleError = 'Please select a time for the schedule';
-      });
-      return;
+      setState(() => _scheduleError = 'Please select a time for the schedule');
+      return false;
     }
+    return true;
+  }
 
-    if (!await ConfirmationDialog.show(
+  Future<bool> _confirmSave() async {
+    return await ConfirmationDialog.show(
       context: context,
       title: 'Save Regime',
       content: 'Update fitness regime?',
       confirmText: 'Save Regime',
-    )) {
-      return;
-    }
+    );
+  }
 
+  Future<void> _updateClient() async {
     final schedule = formatScheduleDays(
       _selectedDays,
       _scheduleTime,
@@ -84,7 +119,9 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
     );
 
     await ClientRepository.instance.updateClient(updated);
+  }
 
+  Future<void> _logActivity() async {
     await ActivityRepository.instance.log(
       ActivityEvent(
         id: '',
@@ -96,10 +133,22 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
         timestamp: DateTime.now(),
       ),
     );
+  }
 
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
+  void _updateScheduleState({
+    List<String>? days,
+    TimeOfDay? time,
+    String? error,
+    int? hours,
+    int? minutes,
+  }) {
+    setState(() {
+      if (days != null) _selectedDays = days;
+      if (time != null) _scheduleTime = time;
+      if (error != null) _scheduleError = error;
+      if (hours != null) _durationHours = hours;
+      if (minutes != null) _durationMinutes = minutes;
+    });
   }
 
   @override
@@ -111,60 +160,29 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_client == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Fitness Regime')),
-        body: const Center(child: Text('Client not found.')),
-      );
+    if (_isLoading) return const RegimeLoadingView();
+    if (_client == null || _errorMessage != null) {
+      return RegimeErrorView(errorMessage: _errorMessage, onRetry: _loadClient);
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Fitness Regime')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ClientSchedulePicker(
-              selectedDays: _selectedDays,
-              selectedTime: _scheduleTime,
-              errorText: _scheduleError,
-              durationHours: _durationHours,
-              durationMinutes: _durationMinutes,
-              onDaysChanged: (days) => setState(() => _selectedDays = days),
-              onTimeChanged: (time) => setState(() => _scheduleTime = time),
-              onErrorChanged: (error) => setState(() => _scheduleError = error),
-              onDurationHoursChanged: (h) => setState(() => _durationHours = h),
-              onDurationMinutesChanged: (m) =>
-                  setState(() => _durationMinutes = m),
-            ),
-            clientFieldGap,
-            TextFormField(
-              controller: _regimeController,
-              decoration: const InputDecoration(
-                labelText: 'Strength / workout regime',
-                alignLabelWithHint: true,
-              ),
-              minLines: 4,
-              maxLines: 6,
-              validator: (value) => requiredField(value, 'Enter a regime'),
-            ),
-            clientFieldGap,
-            TextFormField(
-              controller: _cardioController,
-              decoration: const InputDecoration(
-                labelText: 'Cardio / conditioning plan',
-                alignLabelWithHint: true,
-              ),
-              minLines: 3,
-              maxLines: 5,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveRegime,
-              child: const Text('Save Regime'),
-            ),
-          ],
+      appBar: AppBar(title: Text('Fitness Regime')),
+      body: LoadingOverlay(
+        isLoading: isSaving,
+        child: Form(
+          key: _formKey,
+          child: RegimeFormFields(
+            selectedDays: _selectedDays,
+            scheduleTime: _scheduleTime,
+            scheduleError: _scheduleError,
+            durationHours: _durationHours,
+            durationMinutes: _durationMinutes,
+            regimeController: _regimeController,
+            cardioController: _cardioController,
+            isSaving: isSaving,
+            onScheduleChanged: _updateScheduleState,
+            onSave: _saveRegime,
+          ),
         ),
       ),
     );

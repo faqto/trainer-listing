@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
-
+import 'package:trainer_listing/widgets/shared/page_error_view.dart';
+import 'package:trainer_listing/widgets/shared/page_loading_view.dart';
+import 'package:trainer_listing/widgets/shared/page_save_button.dart';
+import 'package:trainer_listing/widgets/client/edit_client_page/edit_client_form_fields.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/edit client page/edit_client_form_fields.dart';
 import '../../helpers/client_page_helpers.dart';
+import '../../helpers/edit_page_mixin.dart';
+import '../../widgets/shared/loading_overlay.dart';
+import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
 class EditClientPage extends StatefulWidget {
   final String clientId;
-
   const EditClientPage({super.key, required this.clientId});
 
   @override
   State<EditClientPage> createState() => _EditClientPageState();
 }
 
-class _EditClientPageState extends State<EditClientPage> {
+class _EditClientPageState extends State<EditClientPage> with EditPageMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _goalController = TextEditingController();
   final _notesController = TextEditingController();
+
   Client? _client;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   String? _selectedGoal;
   List<String> _selectedDays = [];
@@ -45,33 +52,48 @@ class _EditClientPageState extends State<EditClientPage> {
   }
 
   Future<void> _loadClient() async {
-    _client = await ClientRepository.instance.getById(widget.clientId);
-    if (!mounted) return;
-    if (_client != null) {
-      _nameController.text = _client!.name;
-      _emailController.text = _client!.email;
-      _phoneController.text = _client!.phone;
-      _notesController.text = _client!.notes;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-      if (_client!.goal.startsWith('Others:')) {
-        _selectedGoal = otherGoalOption;
-        _goalController.text = _client!.goal.replaceFirst('Others: ', '');
-      } else {
-        _selectedGoal = goalOptions.contains(_client!.goal)
-            ? _client!.goal
-            : otherGoalOption;
-        if (_selectedGoal == otherGoalOption) {
-          _goalController.text = _client!.goal;
-        }
-      }
-
-      _selectedDays = parseScheduleDays(_client!.schedule);
-      _scheduleTime = parseScheduleTime(_client!.schedule);
-      final totalMin = parseScheduleDurationMinutes(_client!.schedule);
-      _durationHours = totalMin ~/ 60;
-      _durationMinutes = totalMin % 60;
+    try {
+      _client = await ClientRepository.instance.getById(widget.clientId);
+      if (!mounted) return;
+      if (_client != null) _populateFormData();
+    } catch (e) {
+      debugPrint(e.toString());
+      _errorMessage = 'Failed to load client data.';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() {});
+  }
+
+  void _populateFormData() {
+    if (_client == null) return;
+
+    _nameController.text = _client!.name;
+    _emailController.text = _client!.email;
+    _phoneController.text = _client!.phone;
+    _notesController.text = _client!.notes;
+
+    if (_client!.goal.startsWith('Others:')) {
+      _selectedGoal = otherGoalOption;
+      _goalController.text = _client!.goal.replaceFirst('Others: ', '');
+    } else {
+      _selectedGoal = goalOptions.contains(_client!.goal)
+          ? _client!.goal
+          : otherGoalOption;
+      if (_selectedGoal == otherGoalOption) {
+        _goalController.text = _client!.goal;
+      }
+    }
+
+    _selectedDays = parseScheduleDays(_client!.schedule);
+    _scheduleTime = parseScheduleTime(_client!.schedule);
+    final totalMin = parseScheduleDurationMinutes(_client!.schedule);
+    _durationHours = totalMin ~/ 60;
+    _durationMinutes = totalMin % 60;
   }
 
   Future<void> _saveClient() async {
@@ -82,68 +104,81 @@ class _EditClientPageState extends State<EditClientPage> {
     }
 
     if (_selectedDays.isNotEmpty && _scheduleTime == null) {
-      setState(() {
-        _scheduleError = 'Please select a time for the schedule';
-      });
+      setState(() => _scheduleError = 'Please select a time for the schedule');
       return;
     }
 
-    final goal = _selectedGoal == otherGoalOption
-        ? 'Others: ${_goalController.text.trim()}'
-        : _selectedGoal!;
+    await executeWithLoading(() async {
+      final goal = _selectedGoal == otherGoalOption
+          ? 'Others: ${_goalController.text.trim()}'
+          : _selectedGoal!;
 
-    final schedule = formatScheduleDays(
-      _selectedDays,
-      _scheduleTime,
-      context,
-      durationHours: _durationHours,
-      durationMinutes: _durationMinutes,
-    );
+      final schedule = formatScheduleDays(
+        _selectedDays,
+        _scheduleTime,
+        context,
+        durationHours: _durationHours,
+        durationMinutes: _durationMinutes,
+      );
 
-    final updated = _client!.copyWith(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-      goal: goal,
-      schedule: schedule,
-      notes: _notesController.text.trim(),
-    );
+      final updated = _client!.copyWith(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        goal: goal,
+        schedule: schedule,
+        notes: _notesController.text.trim(),
+      );
 
-    await ClientRepository.instance.updateClient(updated);
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
+      await ClientRepository.instance.updateClient(updated);
+      if (mounted) Navigator.pop(context, true);
+    });
   }
 
   Future<void> _deleteClient() async {
     if (_client == null) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmationDialog.show(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Delete Client'),
-          content: Text('Delete ${_client!.name}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Client',
+      content:
+          'Are you sure you want to delete ${_client!.name}? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDangerous: true,
     );
 
-    if (confirmed == true) {
-      await ClientRepository.instance.deleteClient(_client!.id);
-      if (mounted) {
-        Navigator.of(context).pop(true);
+    if (!confirmed) return;
+
+    final clientId = _client!.id;
+    final clientName = _client!.name;
+
+    await executeWithLoading(() async {
+      try {
+        await ClientRepository.instance.deleteClient(clientId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$clientName has been deleted'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        debugPrint('Error deleting client: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete client: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        rethrow;
       }
-    }
+    });
   }
 
   @override
@@ -158,10 +193,18 @@ class _EditClientPageState extends State<EditClientPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_client == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Edit Client')),
-        body: const Center(child: Text('Client not found.')),
+    // Use shared loading view
+    if (_isLoading) {
+      return const PageLoadingView(title: 'Edit Client');
+    }
+
+    // Use shared error view
+    if (_client == null || _errorMessage != null) {
+      return PageErrorView(
+        title: 'Edit Client',
+        errorMessage: _errorMessage ?? 'Client not found.',
+        onRetry: _loadClient,
+        showBackButton: true,
       );
     }
 
@@ -169,44 +212,54 @@ class _EditClientPageState extends State<EditClientPage> {
       appBar: AppBar(
         title: const Text('Edit Client'),
         actions: [
-          IconButton(icon: const Icon(Icons.delete), onPressed: _deleteClient),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: isSaving ? null : _deleteClient,
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              EditClientFormFields(
-                nameController: _nameController,
-                emailController: _emailController,
-                phoneController: _phoneController,
-                goalController: _goalController,
-                notesController: _notesController,
-                goalOptions: goalOptions,
-                selectedGoal: _selectedGoal,
-                selectedDays: _selectedDays,
-                scheduleTime: _scheduleTime,
-                scheduleError: _scheduleError,
-                durationHours: _durationHours,
-                durationMinutes: _durationMinutes,
-                onGoalChanged: (value) => setState(() => _selectedGoal = value),
-                onDaysChanged: (days) => setState(() => _selectedDays = days),
-                onTimeChanged: (time) => setState(() => _scheduleTime = time),
-                onErrorChanged: (error) =>
-                    setState(() => _scheduleError = error),
-                onDurationHoursChanged: (h) =>
-                    setState(() => _durationHours = h),
-                onDurationMinutesChanged: (m) =>
-                    setState(() => _durationMinutes = m),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _saveClient,
-                child: const Text('Save Changes'),
-              ),
-            ],
+      body: LoadingOverlay(
+        isLoading: isSaving,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                // Your existing form fields widget
+                EditClientFormFields(
+                  nameController: _nameController,
+                  emailController: _emailController,
+                  phoneController: _phoneController,
+                  goalController: _goalController,
+                  notesController: _notesController,
+                  goalOptions: goalOptions,
+                  selectedGoal: _selectedGoal,
+                  selectedDays: _selectedDays,
+                  scheduleTime: _scheduleTime,
+                  scheduleError: _scheduleError,
+                  durationHours: _durationHours,
+                  durationMinutes: _durationMinutes,
+                  onGoalChanged: (value) =>
+                      setState(() => _selectedGoal = value),
+                  onDaysChanged: (days) => setState(() => _selectedDays = days),
+                  onTimeChanged: (time) => setState(() => _scheduleTime = time),
+                  onErrorChanged: (error) =>
+                      setState(() => _scheduleError = error),
+                  onDurationHoursChanged: (h) =>
+                      setState(() => _durationHours = h),
+                  onDurationMinutesChanged: (m) =>
+                      setState(() => _durationMinutes = m),
+                ),
+                const SizedBox(height: 24),
+                // Use shared save button
+                PageSaveButton(
+                  isSaving: isSaving,
+                  onSave: _saveClient,
+                  label: 'Save Changes',
+                ),
+              ],
+            ),
           ),
         ),
       ),

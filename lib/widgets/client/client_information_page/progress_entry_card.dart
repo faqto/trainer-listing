@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../models/client_model.dart';
+import 'package:trainer_listing/models/client_model.dart';
 
 class ProgressEntryCard extends StatelessWidget {
   final ProgressEntry entry;

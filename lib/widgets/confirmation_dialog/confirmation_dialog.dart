@@ -14,7 +14,7 @@ class ConfirmationDialog {
   }) async {
     return await showDialog<bool>(
           context: context,
-          barrierColor: Colors.black.withOpacity(0.4),
+          barrierColor: Colors.black.withValues(alpha: 0.4),
           builder: (context) => Dialog(
             backgroundColor: Colors.transparent,
             elevation: 0,

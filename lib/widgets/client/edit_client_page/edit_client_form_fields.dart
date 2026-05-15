@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import '../client/client_schedule_picker.dart';
-import '../../helpers/client_page_helpers.dart';
+import 'package:trainer_listing/helpers/client_page_helpers.dart';
+import 'package:trainer_listing/widgets/client/client_schedule_picker.dart';
 
 class EditClientFormFields extends StatelessWidget {
   final TextEditingController nameController;

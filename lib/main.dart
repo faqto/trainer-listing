@@ -15,10 +15,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-  } catch (error, stackTrace) {
-    debugPrint('Firebase failed to initialize.');
-    debugPrint('$error');
-    debugPrintStack(stackTrace: stackTrace);
+  } catch (error) {
     runApp(
       const MaterialApp(
         home: Scaffold(

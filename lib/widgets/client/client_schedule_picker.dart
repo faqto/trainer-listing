@@ -96,7 +96,7 @@ class ClientSchedulePicker extends StatelessWidget {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: durationHours,
+                  initialValue: durationHours,
                   decoration: InputDecoration(
                     labelText: 'Hours',
                     border: OutlineInputBorder(
@@ -114,7 +114,7 @@ class ClientSchedulePicker extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: durationMinutes,
+                  initialValue: durationMinutes,
                   decoration: InputDecoration(
                     labelText: 'Minutes',
                     border: OutlineInputBorder(

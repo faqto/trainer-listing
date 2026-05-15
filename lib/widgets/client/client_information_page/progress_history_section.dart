@@ -6,7 +6,15 @@ import '../../../widgets/client/client_section_title.dart';
 
 class ProgressHistorySection extends StatelessWidget {
   final List<ProgressEntry> progressEntries;
-  const ProgressHistorySection({super.key, required this.progressEntries});
+  final String clientId;
+  final Future<void> Function() onRefresh;
+
+  const ProgressHistorySection({
+    super.key,
+    required this.progressEntries,
+    required this.clientId,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {

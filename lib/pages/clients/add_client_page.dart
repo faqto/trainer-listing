@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:trainer_listing/widgets/client/add%20client%20page/add_client_basic_info_section.dart';
+import 'package:trainer_listing/widgets/client/add%20client%20page/add_client_training_info_section.dart';
 
 import '../../helpers/firebase_error_messages.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/client/add client page/add_client_basic_info_section.dart';
-import '../../widgets/client/add client page/add_client_training_info_section.dart';
+
 import '../../helpers/client_page_helpers.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
@@ -41,12 +42,47 @@ class _AddClientPageState extends State<AddClientPage> {
     otherGoalOption,
   ];
 
+  // Age validation
+  String? _validateAge(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter age';
+    }
+
+    final age = int.tryParse(value);
+    if (age == null) {
+      return 'Please enter a valid number';
+    }
+
+    if (age < 0) {
+      return 'Age cannot be negative';
+    }
+
+    if (age < 16) {
+      return 'Client is too young (minimum 16 years)';
+    }
+
+    if (age > 75) {
+      return 'Client is too old (maximum 75 years)';
+    }
+
+    return null;
+  }
+
   Future<void> _saveClient() async {
     if (_isSaving) return;
-    if (!_formKey.currentState!.validate() || _selectedGoal == null) {
+
+    // Validate form
+    if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete the required fields.')),
+        const SnackBar(content: Text('Please fix the errors above.')),
       );
+      return;
+    }
+
+    if (_selectedGoal == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a goal.')));
       return;
     }
 
@@ -86,7 +122,7 @@ class _AddClientPageState extends State<AddClientPage> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
-      age: int.tryParse(_ageController.text) ?? 0,
+      age: int.parse(_ageController.text), // Safe now due to validation
       sex: _sexController.text.trim().isEmpty
           ? 'Other'
           : _sexController.text.trim(),
@@ -154,6 +190,7 @@ class _AddClientPageState extends State<AddClientPage> {
                 sexController: _sexController,
                 emailController: _emailController,
                 phoneController: _phoneController,
+                onAgeValidator: _validateAge, // Add this callback
               ),
               const SizedBox(height: 16),
               AddClientTrainingInfoSection(

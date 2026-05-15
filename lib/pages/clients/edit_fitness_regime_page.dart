@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/helpers/client_page_helpers.dart';
-import 'package:trainer_listing/models/activity_event.dart';
-import 'package:trainer_listing/widgets/client/edit_fitness_regime_page/regime_error_view.dart';
-import 'package:trainer_listing/widgets/client/edit_fitness_regime_page/regime_form_fields.dart';
-import 'package:trainer_listing/widgets/client/edit_fitness_regime_page/regime_loading_view.dart';
-import 'package:trainer_listing/widgets/confirmation_dialog/confirmation_dialog.dart';
-import '../../models/client_model.dart';
-import '../../services/client_repository.dart';
-import '../../services/activity_repository.dart';
-import '../../helpers/edit_page_mixin.dart';
-import '../../widgets/loading_overlay.dart';
+import '../../../widgets/shared/edit_page_base.dart';
+import '../../../widgets/shared/schedule_form_section.dart';
+import '../../../widgets/shared/page_save_button.dart';
+import '../../../helpers/client_page_helpers.dart';
+import '../../../models/client_model.dart';
+import '../../../services/client_repository.dart';
+import '../../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
 class EditFitnessRegimePage extends StatefulWidget {
   final String clientId;
@@ -19,17 +15,16 @@ class EditFitnessRegimePage extends StatefulWidget {
   State<EditFitnessRegimePage> createState() => _EditFitnessRegimePageState();
 }
 
-class _EditFitnessRegimePageState extends State<EditFitnessRegimePage>
-    with EditPageMixin {
+class _EditFitnessRegimePageState extends EditPageBase<EditFitnessRegimePage> {
+  @override
+  String get pageTitle => 'Fitness Regime';
+
   final _formKey = GlobalKey<FormState>();
   final _regimeController = TextEditingController();
   final _cardioController = TextEditingController();
-
   Client? _client;
-  bool _isLoading = true;
-  String? _errorMessage;
 
-  // Schedule data
+  // Schedule state
   List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
   String? _scheduleError;
@@ -37,118 +32,98 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage>
   int _durationMinutes = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _loadClient();
-  }
-
-  Future<void> _loadClient() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      _client = await ClientRepository.instance.getById(widget.clientId);
-      if (!mounted) return;
-      _populateFormData();
-    } catch (e) {
-      debugPrint(e.toString());
-      _errorMessage = 'Failed to load client data.';
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+  Future<void> loadData() async {
+    _client = await ClientRepository.instance.getById(widget.clientId);
+    if (_client != null) {
+      _selectedDays = parseScheduleDays(_client!.schedule);
+      _scheduleTime = parseScheduleTime(_client!.schedule);
+      _regimeController.text = _client!.fitnessRegime;
+      _cardioController.text = _client!.cardioPlan;
+      final totalMin = parseScheduleDurationMinutes(_client!.schedule);
+      _durationHours = totalMin ~/ 60;
+      _durationMinutes = totalMin % 60;
     }
   }
 
-  void _populateFormData() {
-    if (_client == null) return;
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate() || _client == null) return;
+    if (_selectedDays.isNotEmpty && _scheduleTime == null) {
+      setState(() => _scheduleError = 'Please select a time');
+      return;
+    }
 
-    _selectedDays = parseScheduleDays(_client!.schedule);
-    _scheduleTime = parseScheduleTime(_client!.schedule);
-    _regimeController.text = _client!.fitnessRegime;
-    _cardioController.text = _client!.cardioPlan;
-
-    final totalMin = parseScheduleDurationMinutes(_client!.schedule);
-    _durationHours = totalMin ~/ 60;
-    _durationMinutes = totalMin % 60;
-  }
-
-  Future<void> _saveRegime() async {
-    if (!_validateForm()) return;
-    if (!await _confirmSave()) return;
+    final confirmed = await ConfirmationDialog.show(
+      context: context,
+      title: 'Save Regime',
+      content: 'Update fitness regime?',
+      confirmText: 'Save',
+    );
+    if (!confirmed) return;
 
     await executeWithLoading(() async {
-      await _updateClient();
-      await _logActivity();
+      final schedule = formatScheduleDays(
+        _selectedDays,
+        _scheduleTime,
+        context,
+        durationHours: _durationHours,
+        durationMinutes: _durationMinutes,
+      );
+
+      await ClientRepository.instance.updateClient(
+        _client!.copyWith(
+          schedule: schedule,
+          fitnessRegime: _regimeController.text.trim(),
+          cardioPlan: _cardioController.text.trim(),
+        ),
+      );
+
       if (mounted) Navigator.pop(context, true);
     });
   }
 
-  bool _validateForm() {
-    if (!_formKey.currentState!.validate() || _client == null) return false;
-
-    if (_selectedDays.isNotEmpty && _scheduleTime == null) {
-      setState(() => _scheduleError = 'Please select a time for the schedule');
-      return false;
-    }
-    return true;
-  }
-
-  Future<bool> _confirmSave() async {
-    return await ConfirmationDialog.show(
-      context: context,
-      title: 'Save Regime',
-      content: 'Update fitness regime?',
-      confirmText: 'Save Regime',
-    );
-  }
-
-  Future<void> _updateClient() async {
-    final schedule = formatScheduleDays(
-      _selectedDays,
-      _scheduleTime,
-      context,
-      durationHours: _durationHours,
-      durationMinutes: _durationMinutes,
-    );
-
-    final updated = _client!.copyWith(
-      schedule: schedule,
-      fitnessRegime: _regimeController.text.trim(),
-      cardioPlan: _cardioController.text.trim(),
-    );
-
-    await ClientRepository.instance.updateClient(updated);
-  }
-
-  Future<void> _logActivity() async {
-    await ActivityRepository.instance.log(
-      ActivityEvent(
-        id: '',
-        type: ActivityType.regimeChanged,
-        clientId: _client!.id,
-        clientName: _client!.name,
-        description:
-            'Fitness regime updated — ${_regimeController.text.trim()}',
-        timestamp: DateTime.now(),
+  @override
+  Widget buildForm(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ScheduleFormSection(
+            selectedDays: _selectedDays,
+            scheduleTime: _scheduleTime,
+            errorText: _scheduleError,
+            durationHours: _durationHours,
+            durationMinutes: _durationMinutes,
+            onDaysChanged: (days) => setState(() => _selectedDays = days),
+            onTimeChanged: (time) => setState(() => _scheduleTime = time),
+            onErrorChanged: (error) => setState(() => _scheduleError = error),
+            onHoursChanged: (h) => setState(() => _durationHours = h),
+            onMinutesChanged: (m) => setState(() => _durationMinutes = m),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _regimeController,
+            decoration: const InputDecoration(labelText: 'Workout regime'),
+            minLines: 4,
+            maxLines: 6,
+            validator: (v) => requiredField(v, 'Enter a regime'),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _cardioController,
+            decoration: const InputDecoration(labelText: 'Cardio plan'),
+            minLines: 3,
+            maxLines: 5,
+          ),
+          const SizedBox(height: 24),
+          PageSaveButton(
+            isSaving: isSaving,
+            onSave: _save,
+            label: 'Save Regime',
+          ),
+        ],
       ),
     );
-  }
-
-  void _updateScheduleState({
-    List<String>? days,
-    TimeOfDay? time,
-    String? error,
-    int? hours,
-    int? minutes,
-  }) {
-    setState(() {
-      if (days != null) _selectedDays = days;
-      if (time != null) _scheduleTime = time;
-      if (error != null) _scheduleError = error;
-      if (hours != null) _durationHours = hours;
-      if (minutes != null) _durationMinutes = minutes;
-    });
   }
 
   @override
@@ -156,35 +131,5 @@ class _EditFitnessRegimePageState extends State<EditFitnessRegimePage>
     _regimeController.dispose();
     _cardioController.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) return const RegimeLoadingView();
-    if (_client == null || _errorMessage != null) {
-      return RegimeErrorView(errorMessage: _errorMessage, onRetry: _loadClient);
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: Text('Fitness Regime')),
-      body: LoadingOverlay(
-        isLoading: isSaving,
-        child: Form(
-          key: _formKey,
-          child: RegimeFormFields(
-            selectedDays: _selectedDays,
-            scheduleTime: _scheduleTime,
-            scheduleError: _scheduleError,
-            durationHours: _durationHours,
-            durationMinutes: _durationMinutes,
-            regimeController: _regimeController,
-            cardioController: _cardioController,
-            isSaving: isSaving,
-            onScheduleChanged: _updateScheduleState,
-            onSave: _saveRegime,
-          ),
-        ),
-      ),
-    );
   }
 }

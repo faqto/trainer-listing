@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../client_section_card.dart';
 import '../client_section_title.dart';
@@ -10,6 +11,7 @@ class AddClientBasicInfoSection extends StatefulWidget {
   final TextEditingController sexController;
   final TextEditingController emailController;
   final TextEditingController phoneController;
+  final FormFieldValidator<String>? onAgeValidator;
 
   const AddClientBasicInfoSection({
     super.key,
@@ -18,6 +20,7 @@ class AddClientBasicInfoSection extends StatefulWidget {
     required this.sexController,
     required this.emailController,
     required this.phoneController,
+    this.onAgeValidator,
   });
 
   @override
@@ -54,8 +57,21 @@ class _AddClientBasicInfoSectionState extends State<AddClientBasicInfoSection> {
             Expanded(
               child: TextFormField(
                 controller: widget.ageController,
+                decoration: const InputDecoration(
+                  labelText: 'Age',
+                  hintText: '16 - 75 years',
+                  prefixIcon: Icon(Icons.cake),
+                ),
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Age'),
+                validator:
+                    widget.onAgeValidator ??
+                    (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter age';
+                      }
+                      return null;
+                    },
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
             ),
             const SizedBox(width: 12),
@@ -91,6 +107,7 @@ class _AddClientBasicInfoSectionState extends State<AddClientBasicInfoSection> {
           controller: widget.phoneController,
           decoration: const InputDecoration(labelText: 'Phone'),
           keyboardType: TextInputType.phone,
+          validator: (value) => requiredField(value, 'Enter phone number'),
         ),
       ],
     );

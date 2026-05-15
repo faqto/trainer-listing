@@ -6,6 +6,7 @@ import '../../models/home_activity.dart';
 import '../../widgets/home/activity_card.dart';
 import '../../widgets/home/dashboard_metric.dart';
 import '../../widgets/home/metric_divider.dart';
+import '../../widgets/home/todays_sessions_section.dart';
 import 'home_constants.dart';
 
 class DashboardTab extends StatelessWidget {
@@ -31,6 +32,7 @@ class DashboardTab extends StatelessWidget {
     final newClientsToday = clients
         .where((client) => isToday(client.joinDate))
         .length;
+    final todaysSessions = clients.where(hasSessionToday).toList();
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -105,7 +107,7 @@ class DashboardTab extends StatelessWidget {
                 Expanded(
                   child: DashboardMetric(
                     label: 'Sessions',
-                    value: clients.where(hasSessionToday).length.toString(),
+                    value: todaysSessions.length.toString(),
                     color: tealColor,
                     icon: Icons.event_available_rounded,
                   ),
@@ -121,6 +123,11 @@ class DashboardTab extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 28),
+          TodaysSessionsSection(
+            sessions: todaysSessions,
+            onOpenClient: onOpenClient,
           ),
           const SizedBox(height: 28),
           Row(

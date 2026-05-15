@@ -7,6 +7,7 @@ import 'package:trainer_listing/widgets/client/client_information_page/info_badg
 import 'package:trainer_listing/widgets/client/client_information_page/notes_section.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/progress_history_section.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/progress_summary_section.dart';
+import 'package:trainer_listing/widgets/shared/page_error_view.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
 import '../../widgets/client/client_sliver_app_bar.dart';
@@ -22,6 +23,7 @@ class ClientInformationPage extends StatefulWidget {
 class _ClientInformationPageState extends State<ClientInformationPage> {
   Client? _client;
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -30,12 +32,24 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
   }
 
   Future<void> _loadClient() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
       _client = await ClientRepository.instance.getById(widget.clientId);
+      // If the client no longer exists (e.g. just deleted), go back immediately.
+      if (mounted && _client == null) {
+        Navigator.pop(context, true);
+        return;
+      }
     } catch (e) {
       debugPrint(e.toString());
+      _errorMessage = 'Failed to load client data.';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _refresh() async => _loadClient();
@@ -45,6 +59,16 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    if (_client == null || _errorMessage != null) {
+      return PageErrorView(
+        title: 'Client Profile',
+        errorMessage: _errorMessage ?? 'Client not found.',
+        onRetry: _loadClient,
+        showBackButton: true,
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -90,7 +114,11 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
             progressCount: progressEntries.length,
           ),
           const SizedBox(height: 16),
-          ProgressHistorySection(progressEntries: progressEntries),
+          ProgressHistorySection(
+            progressEntries: progressEntries,
+            clientId: _client!.id, // Add this
+            onRefresh: _refresh, // Add this
+          ),
           const SizedBox(height: 16),
           NotesSection(client: _client!),
           const SizedBox(height: 24),

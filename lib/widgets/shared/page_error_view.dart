@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 
-class RegimeErrorView extends StatelessWidget {
+class PageErrorView extends StatelessWidget {
   final String? errorMessage;
   final VoidCallback onRetry;
+  final String title;
+  final bool showBackButton;
 
-  const RegimeErrorView({super.key, this.errorMessage, required this.onRetry});
+  const PageErrorView({
+    super.key,
+    this.errorMessage,
+    required this.onRetry,
+    required this.title,
+    this.showBackButton = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Fitness Regime')),
+      appBar: AppBar(title: Text(title)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -17,7 +25,7 @@ class RegimeErrorView extends StatelessWidget {
             const Icon(Icons.error_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              errorMessage ?? 'Client not found.',
+              errorMessage ?? 'Failed to load data.',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 24),
@@ -26,6 +34,14 @@ class RegimeErrorView extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),
+            if (showBackButton) ...[
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Go Back'),
+              ),
+            ],
           ],
         ),
       ),

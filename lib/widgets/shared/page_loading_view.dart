@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-class RegimeLoadingView extends StatelessWidget {
-  const RegimeLoadingView({super.key});
+class PageLoadingView extends StatelessWidget {
+  final String title;
+
+  const PageLoadingView({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Fitness Regime')),
+      appBar: AppBar(title: Text(title)),
       body: const Center(child: CircularProgressIndicator()),
     );
   }

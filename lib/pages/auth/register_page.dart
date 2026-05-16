@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'welcome_page.dart';
 import 'package:trainer_listing/widgets/register_page/register_field.dart';
 import 'package:trainer_listing/widgets/register_page/register_footer.dart';
@@ -13,59 +14,7 @@ import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
-const String _privacyPolicyText = '''
-Privacy Policy for FitED
-
-Effective Date: May 16, 2026
-
-1. Scope of Service
-
-FitED is a cloud-hosted utility mobile application designed exclusively for professional fitness trainers to record, track, and monitor the physical progress of their individual clients.
-
-Important: This App is built for operational use by Trainers only. Clients do not hold user accounts, login credentials, or direct interface access to the application or the cloud infrastructure.
-
-2. Data Collection & Sensitive Physical Metrics
-
-The application processes personal fitness and biometric performance metrics entered exclusively by the authenticated Trainer. This data includes:
-
-Progress Metrics: Body weight, body fat percentage, and precise anthropometric physical measurements.
-
-Performance Logs: Comprehensive historical logs of physical workouts, including weights, sets, repetitions, and timestamps.
-
-3. Data Storage & Cloud Infrastructure (Firebase)
-
-All information entered into the application is transmitted to and stored on a secure cloud database managed through Google Firebase.
-
-Data is synchronized in real-time across the Trainer's authenticated devices.
-
-While the data is securely hosted within Firebase cloud architecture (utilizing encryption protocols for data both in transit and at rest), the application developer operates as the Data Controller responsible for the database backend.
-
-4. Mandatory Client Consent Framework
-
-Because physical metrics constitute sensitive health-adjacent information under modern data protection laws (such as GDPR and state-level privacy acts), FitED strictly prohibits unauthorized data logging.
-
-The Consent Gate: Before a Trainer can initialize a new profile or upload a client's physical metrics to the Firebase database, the client must be presented with the in-app disclosure screen.
-
-The client must physically review the terms on the Trainer's device and check the digital authorization box.
-
-The app logs this explicit consent (consentGranted = true) along with a timestamp into Firebase before unlocking the profile data-entry interface.
-
-5. Data Subject Rights (Access & Erasure)
-
-Even though clients do not possess direct login accounts to the FitED platform, they retain full legal rights over their personal data stored in our database:
-
-Right to Deletion (The Right to be Forgotten): A client may demand the permanent removal of their fitness history at any time.
-
-Execution: A client can exercise this right by instructing their Trainer to delete their profile directly inside the application UI, or by emailing the developer support desk at support@fitedapp.com. Upon receiving a request via support, the developer will manually purge all associated document blocks from the Firebase database within standard regulatory timelines.
-
-6. Data Sharing & Security Commitments
-
-We strictly enforce data minimization principles. We do not sell, rent, lease, or share client progress profiles or trainer data with third-party advertising brokers or commercial marketing networks. Data is utilized strictly to render performance progress charts and visualizations for the tracking trainer.
-
-7. Contact Us
-
-For any privacy inquiries, data access requests, or urgent profile deletion requirements, please contact: Email: support@fitedapp.com
-''';
+const String _privacyPolicyAsset = 'assets/docs/fited_privacy_policy.txt';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -171,14 +120,17 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _showPrivacyPolicy() async {
+    final policyText = await rootBundle.loadString(_privacyPolicyAsset);
+
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('FitED Privacy Policy'),
-        content: const SingleChildScrollView(
+        content: SingleChildScrollView(
           child: Text(
-            _privacyPolicyText,
-            style: TextStyle(height: 1.35),
+            policyText,
+            style: const TextStyle(height: 1.35),
           ),
         ),
         actions: [

@@ -1,7 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'welcome_page.dart';
 import 'package:trainer_listing/widgets/register_page/register_field.dart';
 import 'package:trainer_listing/widgets/register_page/register_footer.dart';
 import 'package:trainer_listing/widgets/register_page/register_header.dart';
@@ -14,8 +12,6 @@ import '../../models/user_role.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
-
-const String _privacyPolicyAsset = 'assets/docs/fited_privacy_policy.txt';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -65,8 +61,6 @@ class _RegisterPageState extends State<RegisterPage> {
         role: _selectedRole,
       );
 
-      // Store credentials so the verification page can re-authenticate
-      // temporarily when checking or resending without the user re-typing.
       (AuthRepository.instance as FirebaseAuthRepository)
           .storePendingCredentials(
             _emailController.text.trim(),
@@ -76,10 +70,8 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
-        AppRoutes.welcome,
-        (route) => false,
-        arguments: WelcomeType.newUser,
         AppRoutes.emailVerification,
+        (route) => false,
         arguments: _emailController.text.trim(),
       );
     } on FirebaseAuthException catch (error) {
@@ -136,27 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _showPrivacyPolicy() async {
-    final policyText = await rootBundle.loadString(_privacyPolicyAsset);
-
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('FitED Privacy Policy'),
-        content: SingleChildScrollView(
-          child: Text(
-            policyText,
-            style: const TextStyle(height: 1.35),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+    Navigator.of(context).pushNamed(AppRoutes.privacyPolicy);
   }
 
   @override

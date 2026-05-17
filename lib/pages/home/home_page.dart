@@ -123,7 +123,7 @@ class _HomePageState extends State<HomePage> {
           DashboardTab(
             clients: clients,
             recentActivity: recentActivities,
-            trainerName: AuthRepository.instance.currentUserName,
+            trainerName: AuthRepository.instance.currentUserLastName,
             onAddClient: _openAddClient,
             onActivityResolved: _loadClients,
             onOpenClient: (id) => _openClientDetails(id),

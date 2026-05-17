@@ -65,7 +65,6 @@ flutter:
     - assets/text/about_us.txt
     - assets/text/privacy_policy.txt
     - assets/text/terms_and_conditions.txt
-
   # To add more assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 
 abstract class AuthRepository {
   static AuthRepository instance = FirebaseAuthRepository();
@@ -28,6 +31,7 @@ class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuth get _auth => FirebaseAuth.instance;
 
   static const String _separator = '|';
+  static const String _serverUrl = 'https://fited-email-server.onrender.com';
 
   @override
   bool get hasCurrentUser => _auth.currentUser != null;
@@ -65,8 +69,7 @@ class FirebaseAuthRepository implements AuthRepository {
       password: password,
     );
     if (credential.user?.emailVerified == false) {
-      // Send them a new verification email silently
-      await credential.user?.sendEmailVerification();
+      await _sendVerificationViaServer(credential.user!.email!);
       await _auth.signOut();
       throw FirebaseAuthException(
         code: 'email-not-verified',
@@ -89,20 +92,87 @@ class FirebaseAuthRepository implements AuthRepository {
     );
     final displayName = '${lastName.trim()}$_separator${name.trim()}';
     await credential.user?.updateDisplayName(displayName);
-    await credential.user?.sendEmailVerification();
-    // Sign out immediately — account is created but not yet verified.
-    // Firestore write happens only after the user verifies and logs in.
+
+    // Send verification email via Resend (better inbox delivery)
+    await _sendVerificationViaServer(credential.user!.email!);
+
+    // Sign out immediately — Firestore write happens only after verification.
     await _auth.signOut();
+  }
+
+  // Calls Firebase to send the verification email directly.
+  // Falls back cleanly if anything goes wrong.
+  Future<void> _sendVerificationViaServer(String email) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // Firebase sends the verification link — we trigger it here
+    // and separately notify via Resend with a heads-up email.
+    await user.sendEmailVerification();
+
+    // Send a companion email via Resend so it lands in inbox
+    // instead of spam. The actual verify button comes from Firebase.
+    try {
+      await http.post(
+        Uri.parse('$_serverUrl/send-verification'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+    } catch (_) {
+      // Non-fatal — Firebase already sent the link above
+    }
+  }
+
+  // Temporarily stored so we can re-authenticate on the verification page
+  // without asking the user to type their password again.
+  String? _pendingEmail;
+  String? _pendingPassword;
+
+  void storePendingCredentials(String email, String password) {
+    _pendingEmail = email;
+    _pendingPassword = password;
+  }
+
+  void clearPendingCredentials() {
+    _pendingEmail = null;
+    _pendingPassword = null;
   }
 
   @override
   Future<void> sendVerificationEmail() async {
-    await _auth.currentUser?.sendEmailVerification();
+    if (_auth.currentUser == null &&
+        _pendingEmail != null &&
+        _pendingPassword != null) {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: _pendingEmail!,
+        password: _pendingPassword!,
+      );
+      await _sendVerificationViaServer(credential.user!.email!);
+      await _auth.signOut();
+    } else if (_auth.currentUser != null) {
+      await _sendVerificationViaServer(_auth.currentUser!.email!);
+    }
   }
 
   @override
   Future<void> reloadUser() async {
-    await _auth.currentUser?.reload();
+    if (_auth.currentUser == null &&
+        _pendingEmail != null &&
+        _pendingPassword != null) {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: _pendingEmail!,
+        password: _pendingPassword!,
+      );
+      await credential.user?.reload();
+      // Stay signed in only if verified so isEmailVerified returns true
+      if (credential.user?.emailVerified == false) {
+        await _auth.signOut();
+      } else {
+        clearPendingCredentials();
+      }
+    } else {
+      await _auth.currentUser?.reload();
+    }
   }
 
   @override

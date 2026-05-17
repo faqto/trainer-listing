@@ -49,6 +49,15 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text,
         lastName: _lastNameController.text.trim(),
       );
+
+      // Store credentials so the verification page can re-authenticate
+      // temporarily when checking or resending without the user re-typing.
+      (AuthRepository.instance as FirebaseAuthRepository)
+          .storePendingCredentials(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,

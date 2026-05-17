@@ -1,12 +1,9 @@
-import 'dart:async';
-
 class SessionService {
   static final SessionService _instance = SessionService._internal();
   factory SessionService() => _instance;
   SessionService._internal();
+
   final Map<String, ActiveSession> _activeSessions = {};
-  final _sessionController = StreamController<SessionEvent>.broadcast();
-  Stream<SessionEvent> get onSessionChanged => _sessionController.stream;
 
   void startSession(String clientId, String clientName) {
     _activeSessions[clientId] = ActiveSession(
@@ -14,30 +11,10 @@ class SessionService {
       clientName: clientName,
       startedAt: DateTime.now(),
     );
-
-    _sessionController.add(
-      SessionEvent(
-        type: SessionEventType.started,
-        clientId: clientId,
-        clientName: clientName,
-      ),
-    );
   }
 
   void endSession(String clientId) {
-    final session = _activeSessions[clientId];
-    if (session != null) {
-      _activeSessions.remove(clientId);
-
-      _sessionController.add(
-        SessionEvent(
-          type: SessionEventType.ended,
-          clientId: clientId,
-          clientName: session.clientName,
-          duration: DateTime.now().difference(session.startedAt),
-        ),
-      );
-    }
+    _activeSessions.remove(clientId);
   }
 
   bool isSessionActive(String clientId) {
@@ -50,10 +27,6 @@ class SessionService {
 
   List<ActiveSession> getAllActiveSessions() {
     return _activeSessions.values.toList();
-  }
-
-  void endAllSessions() {
-    _activeSessions.clear();
   }
 }
 
@@ -69,20 +42,4 @@ class ActiveSession {
   });
 
   Duration get duration => DateTime.now().difference(startedAt);
-}
-
-enum SessionEventType { started, ended }
-
-class SessionEvent {
-  final SessionEventType type;
-  final String clientId;
-  final String clientName;
-  final Duration? duration;
-
-  SessionEvent({
-    required this.type,
-    required this.clientId,
-    required this.clientName,
-    this.duration,
-  });
 }

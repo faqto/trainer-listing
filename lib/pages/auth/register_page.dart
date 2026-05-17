@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'welcome_page.dart';
 import 'package:trainer_listing/widgets/register_page/register_field.dart';
 import 'package:trainer_listing/widgets/register_page/register_footer.dart';
 import 'package:trainer_listing/widgets/register_page/register_header.dart';
@@ -50,11 +49,20 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text,
         lastName: _lastNameController.text.trim(),
       );
+
+      // Store credentials so the verification page can re-authenticate
+      // temporarily when checking or resending without the user re-typing.
+      (AuthRepository.instance as FirebaseAuthRepository)
+          .storePendingCredentials(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,
-        AppRoutes.welcome,
-        arguments: WelcomeType.newUser,
+        AppRoutes.emailVerification,
+        arguments: _emailController.text.trim(),
       );
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;

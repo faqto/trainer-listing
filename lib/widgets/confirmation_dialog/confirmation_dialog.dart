@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/widgets/confirmation_dialog/confirmation_dialog_actions.dart';
-import 'package:trainer_listing/widgets/confirmation_dialog/confirmation_dialog_header.dart';
+import 'confirmation_dialog_actions.dart';
+import 'confirmation_dialog_header.dart';
 
 class ConfirmationDialog {
   static Future<bool> show({

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:trainer_listing/main.dart';
-import 'package:trainer_listing/models/activity_event.dart';
-import 'package:trainer_listing/models/client_model.dart';
-import 'package:trainer_listing/models/user_role.dart';
-import 'package:trainer_listing/services/activity_repository.dart';
-import 'package:trainer_listing/services/auth_repository.dart';
-import 'package:trainer_listing/services/client_repository.dart';
+import 'package:FitEd/main.dart';
+import 'package:FitEd/models/activity_event.dart';
+import 'package:FitEd/models/client_model.dart';
+import 'package:FitEd/models/user_role.dart';
+import 'package:FitEd/services/activity_repository.dart';
+import 'package:FitEd/services/auth_repository.dart';
+import 'package:FitEd/services/client_repository.dart';
 
 void main() {
   setUp(() async {
@@ -265,6 +265,22 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> signOut() async {
     _signedIn = false;
     _email = '';
+  }
+
+  @override
+  // TODO: implement isEmailVerified
+  bool get isEmailVerified => throw UnimplementedError();
+
+  @override
+  Future<void> reloadUser() {
+    // TODO: implement reloadUser
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> sendVerificationEmail() {
+    // TODO: implement sendVerificationEmail
+    throw UnimplementedError();
   }
 }
 

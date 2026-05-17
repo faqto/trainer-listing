@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/widgets/client/client_information_page/detail_block.dart';
+import 'package:FitEd/widgets/client/client_information_page/detail_block.dart';
 import '../../../models/client_model.dart';
 import '../../../routes/app_routes.dart';
 import '../../../helpers/navigation_helper.dart';

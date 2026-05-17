@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/widgets/register_page/register_field.dart';
-import 'package:trainer_listing/widgets/register_page/register_footer.dart';
-import 'package:trainer_listing/widgets/register_page/register_header.dart';
-import 'package:trainer_listing/widgets/register_page/register_password_field.dart';
-import 'package:trainer_listing/widgets/register_page/register_password_hint.dart';
-import 'package:trainer_listing/widgets/register_page/register_section_header.dart';
-import 'package:trainer_listing/widgets/register_page/register_submit_button.dart';
+import 'package:FitEd/widgets/register_page/register_field.dart';
+import 'package:FitEd/widgets/register_page/register_footer.dart';
+import 'package:FitEd/widgets/register_page/register_header.dart';
+import 'package:FitEd/widgets/register_page/register_password_field.dart';
+import 'package:FitEd/widgets/register_page/register_password_hint.dart';
+import 'package:FitEd/widgets/register_page/register_section_header.dart';
+import 'package:FitEd/widgets/register_page/register_submit_button.dart';
 
 import '../../models/user_role.dart';
 import '../../routes/app_routes.dart';

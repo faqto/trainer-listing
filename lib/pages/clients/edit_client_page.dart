@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/widgets/shared/page_error_view.dart';
-import 'package:trainer_listing/widgets/shared/page_loading_view.dart';
-import 'package:trainer_listing/widgets/shared/page_save_button.dart';
-import 'package:trainer_listing/widgets/client/edit_client_page/edit_client_form_fields.dart';
+import 'package:FitEd/widgets/shared/page_error_view.dart';
+import 'package:FitEd/widgets/shared/page_loading_view.dart';
+import 'package:FitEd/widgets/shared/page_save_button.dart';
+import 'package:FitEd/widgets/client/edit_client_page/edit_client_form_fields.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
 import '../../helpers/client_page_helpers.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/models/client_model.dart';
+import 'package:FitEd/models/client_model.dart';
 
 class ProgressEntryCard extends StatelessWidget {
   final ProgressEntry entry;

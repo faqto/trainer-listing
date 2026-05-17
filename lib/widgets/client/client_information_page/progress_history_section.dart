@@ -1,5 +1,5 @@
+import 'package:FitEd/widgets/client/client_information_page/progress_entry_card.dart';
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/widgets/client/client_information_page/progress_entry_card.dart';
 import '../../../models/client_model.dart';
 import '../../../widgets/client/client_section_card.dart';
 import '../../../widgets/client/client_section_title.dart';

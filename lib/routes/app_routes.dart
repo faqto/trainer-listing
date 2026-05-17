@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trainer_listing/pages/auth/welcome_page.dart';
+import 'package:FitEd/pages/auth/welcome_page.dart';
 
 import '../pages/auth/email_verification_page.dart';
 import '../pages/auth/login_page.dart';

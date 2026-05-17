@@ -4,6 +4,7 @@ abstract class AuthRepository {
   static AuthRepository instance = FirebaseAuthRepository();
 
   bool get hasCurrentUser;
+  bool get isEmailVerified;
   String? get currentUserId;
   String get currentUserName;
 
@@ -16,6 +17,10 @@ abstract class AuthRepository {
     required String lastName,
   });
 
+  Future<void> sendVerificationEmail();
+
+  Future<void> reloadUser();
+
   Future<void> signOut();
 }
 
@@ -26,6 +31,9 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   bool get hasCurrentUser => _auth.currentUser != null;
+
+  @override
+  bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
 
   @override
   String? get currentUserId => _auth.currentUser?.uid;
@@ -52,7 +60,20 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signIn({required String email, required String password}) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (credential.user?.emailVerified == false) {
+      // Send them a new verification email silently
+      await credential.user?.sendEmailVerification();
+      await _auth.signOut();
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message:
+            'Your email isn\'t verified yet. We\'ve sent a new verification link to $email — check your inbox.',
+      );
+    }
   }
 
   @override
@@ -68,6 +89,20 @@ class FirebaseAuthRepository implements AuthRepository {
     );
     final displayName = '${lastName.trim()}$_separator${name.trim()}';
     await credential.user?.updateDisplayName(displayName);
+    await credential.user?.sendEmailVerification();
+    // Sign out immediately — account is created but not yet verified.
+    // Firestore write happens only after the user verifies and logs in.
+    await _auth.signOut();
+  }
+
+  @override
+  Future<void> sendVerificationEmail() async {
+    await _auth.currentUser?.sendEmailVerification();
+  }
+
+  @override
+  Future<void> reloadUser() async {
+    await _auth.currentUser?.reload();
   }
 
   @override

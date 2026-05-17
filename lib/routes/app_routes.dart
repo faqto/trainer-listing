@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trainer_listing/pages/auth/welcome_page.dart';
 
+import '../pages/auth/email_verification_page.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/register_page.dart';
 import '../pages/clients/add_client_page.dart';
@@ -14,6 +15,7 @@ import '../pages/home/home_page.dart';
 class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
+  static const String emailVerification = '/email-verification';
   static const String home = '/home';
   static const String clients = '/clients';
   static const String addClient = '/clients/add';
@@ -71,6 +73,10 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     login: (context) => const LoginPage(),
     register: (context) => const RegisterPage(),
+    emailVerification: (context) {
+      final email = ModalRoute.of(context)?.settings.arguments as String? ?? '';
+      return EmailVerificationPage(email: email);
+    },
     home: (context) => const HomePage(),
     clients: (context) => const ClientsListPage(),
     addClient: (context) => const AddClientPage(),

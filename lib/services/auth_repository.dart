@@ -1,12 +1,16 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/user_role.dart';
+import 'package:http/http.dart' as http;
 
 abstract class AuthRepository {
   static AuthRepository instance = FirebaseAuthRepository();
 
   bool get hasCurrentUser;
+  bool get isEmailVerified;
   String? get currentUserId;
   String? get currentUserEmail;
   String get currentUserName;
@@ -29,6 +33,10 @@ abstract class AuthRepository {
     required UserRole role,
   });
 
+  Future<void> sendVerificationEmail();
+
+  Future<void> reloadUser();
+
   Future<void> signOut();
 }
 
@@ -41,6 +49,7 @@ class FirebaseAuthRepository implements AuthRepository {
   String? _cachedName;
   String? _cachedLastName;
   String? _cachedEmail;
+  static const String _serverUrl = 'https://fited-email-server.onrender.com';
 
   @override
   bool get hasCurrentUser {
@@ -48,6 +57,9 @@ class FirebaseAuthRepository implements AuthRepository {
     if (!signedIn) _clearCache();
     return signedIn;
   }
+
+  @override
+  bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
 
   @override
   String? get currentUserId => _auth.currentUser?.uid;
@@ -136,6 +148,15 @@ class FirebaseAuthRepository implements AuthRepository {
       email: email,
       password: password,
     );
+    if (credential.user?.emailVerified == false) {
+      await _sendVerificationViaServer(credential.user!.email!);
+      await _auth.signOut();
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message:
+            'Your email isn\'t verified yet. We\'ve sent a new verification link to $email — check your inbox.',
+      );
+    }
     await _syncSignedInUser(credential.user, role);
   }
 
@@ -153,6 +174,7 @@ class FirebaseAuthRepository implements AuthRepository {
     );
     final displayName = name.trim();
     await credential.user?.updateDisplayName(displayName);
+
     await _saveUserProfile(
       user: credential.user,
       name: name,
@@ -160,6 +182,10 @@ class FirebaseAuthRepository implements AuthRepository {
       role: role,
       isNew: true,
     );
+
+    await _sendVerificationViaServer(credential.user!.email!);
+
+    await _auth.signOut();
   }
 
   Future<void> _syncSignedInUser(User? user, UserRole selectedRole) async {
@@ -238,6 +264,71 @@ class FirebaseAuthRepository implements AuthRepository {
     _cachedName = null;
     _cachedLastName = null;
     _cachedEmail = null;
+  }
+
+  Future<void> _sendVerificationViaServer(String email) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await user.sendEmailVerification();
+
+    try {
+      await http.post(
+        Uri.parse('$_serverUrl/send-verification'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+    } catch (_) {
+    }
+  }
+
+  String? _pendingEmail;
+  String? _pendingPassword;
+
+  void storePendingCredentials(String email, String password) {
+    _pendingEmail = email;
+    _pendingPassword = password;
+  }
+
+  void clearPendingCredentials() {
+    _pendingEmail = null;
+    _pendingPassword = null;
+  }
+
+  @override
+  Future<void> sendVerificationEmail() async {
+    if (_auth.currentUser == null &&
+        _pendingEmail != null &&
+        _pendingPassword != null) {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: _pendingEmail!,
+        password: _pendingPassword!,
+      );
+      await _sendVerificationViaServer(credential.user!.email!);
+      await _auth.signOut();
+    } else if (_auth.currentUser != null) {
+      await _sendVerificationViaServer(_auth.currentUser!.email!);
+    }
+  }
+
+  @override
+  Future<void> reloadUser() async {
+    if (_auth.currentUser == null &&
+        _pendingEmail != null &&
+        _pendingPassword != null) {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: _pendingEmail!,
+        password: _pendingPassword!,
+      );
+      await credential.user?.reload();
+      if (credential.user?.emailVerified == false) {
+        await _auth.signOut();
+      } else {
+        clearPendingCredentials();
+      }
+    } else {
+      await _auth.currentUser?.reload();
+    }
   }
 
   @override

@@ -26,7 +26,7 @@ class ConfirmationDialog {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0F172A).withOpacity(0.12),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.12),
                     blurRadius: 32,
                     offset: const Offset(0, 12),
                   ),

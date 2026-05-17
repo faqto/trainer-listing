@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../routes/app_routes.dart';
-import '../../../services/auth_repository.dart';
+import '../../models/user_role.dart';
+import '../../routes/app_routes.dart';
+import '../../services/auth_repository.dart';
 
 enum WelcomeType { newUser, returningUser }
 
@@ -18,6 +19,7 @@ class _WelcomePageState extends State<WelcomePage>
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  UserRole? _role;
 
   @override
   void initState() {
@@ -35,10 +37,23 @@ class _WelcomePageState extends State<WelcomePage>
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
-    });
+    _routeAfterWelcome();
+  }
+
+  Future<void> _routeAfterWelcome() async {
+    final role = await AuthRepository.instance.loadCurrentUserRole().catchError(
+      (_) => UserRole.coach,
+    );
+    if (!mounted) return;
+    setState(() => _role = role);
+
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      role == UserRole.client ? AppRoutes.clientHome : AppRoutes.home,
+      (route) => false,
+    );
   }
 
   @override
@@ -51,6 +66,8 @@ class _WelcomePageState extends State<WelcomePage>
   Widget build(BuildContext context) {
     final name = AuthRepository.instance.currentUserName;
     final isNew = widget.type == WelcomeType.newUser;
+    final role = _role ?? AuthRepository.instance.currentUserRole;
+    final roleLabel = role?.label ?? 'Member';
 
     return Scaffold(
       body: Container(
@@ -76,7 +93,7 @@ class _WelcomePageState extends State<WelcomePage>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
@@ -99,7 +116,7 @@ class _WelcomePageState extends State<WelcomePage>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Coach $name',
+                      '$roleLabel $name',
                       style: const TextStyle(
                         fontFamily: 'BarlowCondensed',
                         color: Colors.white,
@@ -111,7 +128,11 @@ class _WelcomePageState extends State<WelcomePage>
                     const SizedBox(height: 16),
                     Text(
                       isNew
-                          ? 'Your trainer workspace is ready.\nLet\'s get started!'
+                          ? role == UserRole.client
+                                ? 'Your client profile is ready.\nChoose a coach to get started.'
+                                : 'Your coach workspace is ready.\nLet\'s get started!'
+                          : role == UserRole.client
+                          ? 'Good to see you again.\nYour coach connection is waiting.'
                           : 'Good to see you again.\nYour clients are waiting.',
                       style: const TextStyle(
                         fontFamily: 'NunitoSans',

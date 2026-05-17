@@ -2,9 +2,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/clients/{clientId} {
-      allow read, create, update, delete: if request.auth != null
-        && request.auth.uid == userId;
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isClientDocOwner(clientId) {
+      return signedIn() && request.auth.uid == clientId;
+    }
+
+    function isCoach(userId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(userId)).data.role == 'coach';
+    }
+
+    function existingClientUserOwnsDoc() {
+      return signedIn()
+        && resource.data.clientUserId == request.auth.uid;
+    }
+
+    function incomingClientUserOwnsDoc() {
+      return signedIn()
+        && request.resource.data.clientUserId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if ownsUser(userId)
+        || (signedIn() && resource.data.role == 'coach');
+      allow create, update, delete: if ownsUser(userId);
+
+      match /clients/{clientId} {
+        allow read: if ownsUser(userId)
+          || isClientDocOwner(clientId)
+          || existingClientUserOwnsDoc();
+        allow create: if ownsUser(userId)
+          || (isClientDocOwner(clientId) && incomingClientUserOwnsDoc())
+          || isCoach(userId);
+        allow update: if ownsUser(userId)
+          || isClientDocOwner(clientId)
+          || existingClientUserOwnsDoc()
+          || isCoach(userId);
+        allow delete: if ownsUser(userId)
+          || isClientDocOwner(clientId)
+          || existingClientUserOwnsDoc();
+      }
+
+      match /activity/{activityId} {
+        allow read, create, update, delete: if ownsUser(userId);
+      }
     }
   }
 }

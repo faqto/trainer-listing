@@ -15,8 +15,11 @@ class RegisterFooter extends StatelessWidget {
           style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
         ),
         TextButton(
-          onPressed: () =>
-              Navigator.pushReplacementNamed(context, AppRoutes.login),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (route) => false,
+          ),
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFF1E40AF),
             padding: const EdgeInsets.symmetric(horizontal: 6),

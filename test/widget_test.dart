@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trainer_listing/main.dart';
+import 'package:trainer_listing/models/activity_event.dart';
 import 'package:trainer_listing/models/client_model.dart';
+import 'package:trainer_listing/models/user_role.dart';
+import 'package:trainer_listing/services/activity_repository.dart';
 import 'package:trainer_listing/services/auth_repository.dart';
 import 'package:trainer_listing/services/client_repository.dart';
 
@@ -9,35 +12,38 @@ void main() {
   setUp(() async {
     AuthRepository.instance = _FakeAuthRepository();
     ClientRepository.instance = _FakeClientRepository();
+    ActivityRepository.instance = _FakeActivityRepository();
     await ClientRepository.instance.resetForTesting();
   });
 
   testWidgets('signs in and shows the dashboard', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'trainer@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'password');
-    await tester.tap(find.text('Sign In'));
-    await tester.pumpAndSettle();
+    await _signInAsCoach(tester);
 
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Coach Trainer'), findsOneWidget);
     expect(find.text('Clients'), findsWidgets);
   });
 
+  testWidgets('does not reveal a not found page after signed-in back', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await _signInAsCoach(tester);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Page Not Found'), findsNothing);
+    expect(find.text('Missing client information.'), findsNothing);
+  });
+
   testWidgets('adds a client from the dashboard', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'trainer@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'password');
-    await tester.tap(find.text('Sign In'));
-    await tester.pumpAndSettle();
+    await _signInAsCoach(tester);
 
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
@@ -47,13 +53,17 @@ void main() {
       'Jordan Lee',
     );
     await tester.enterText(find.widgetWithText(TextFormField, 'Age'), '34');
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Gender'),
-      'Nonbinary',
-    );
+    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Female').last);
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Email'),
       'jordan@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Phone'),
+      '555-0103',
     );
     await tester.tap(find.text('Training Goal'));
     await tester.pumpAndSettle();
@@ -62,6 +72,8 @@ void main() {
 
     await tester.ensureVisible(find.text('Save'));
     await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Client'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.people));
@@ -81,13 +93,7 @@ void main() {
   testWidgets('edits a client fitness regime', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'trainer@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'password');
-    await tester.tap(find.text('Sign In'));
-    await tester.pumpAndSettle();
+    await _signInAsCoach(tester);
 
     await tester.tap(find.byIcon(Icons.assignment));
     await tester.pumpAndSettle();
@@ -98,15 +104,20 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Strength / workout regime'),
+      find.widgetWithText(TextFormField, 'Workout regime'),
       'Push, pull, legs with progressive overload.',
     );
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Cardio / conditioning plan'),
+      find.widgetWithText(TextFormField, 'Cardio plan'),
       'Zone 2 bike for 25 minutes twice weekly.',
     );
 
-    await tester.tap(find.text('Save Regime'));
+    final saveRegimeButton = find.widgetWithText(ElevatedButton, 'Save Regime');
+    await tester.ensureVisible(saveRegimeButton);
+    await tester.pumpAndSettle();
+    await tester.tap(saveRegimeButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
     await tester.pumpAndSettle();
 
     expect(
@@ -120,25 +131,25 @@ void main() {
   ) async {
     await tester.pumpWidget(const MyApp());
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'trainer@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'password');
-    await tester.tap(find.text('Sign In'));
-    await tester.pumpAndSettle();
+    await _signInAsCoach(tester);
 
     await tester.tap(find.byIcon(Icons.people));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sarah Jenkins'));
     await tester.pumpAndSettle();
 
+    final updateBodyMetricsButton = find.widgetWithText(
+      OutlinedButton,
+      'Update Body Metrics',
+    );
     await tester.scrollUntilVisible(
-      find.text('Update Body Metrics'),
+      updateBodyMetricsButton,
       300,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('Update Body Metrics'));
+    await tester.ensureVisible(updateBodyMetricsButton);
+    await tester.pumpAndSettle();
+    await tester.tap(updateBodyMetricsButton);
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -150,12 +161,20 @@ void main() {
       'Improved consistency this week.',
     );
 
+    final saveMetricsButton = find.widgetWithText(
+      ElevatedButton,
+      'Save Metrics',
+    );
     await tester.scrollUntilVisible(
-      find.text('Save Metrics'),
+      saveMetricsButton,
       300,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('Save Metrics'));
+    await tester.ensureVisible(saveMetricsButton);
+    await tester.pumpAndSettle();
+    await tester.tap(saveMetricsButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save Metrics').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Progress History'), findsOneWidget);
@@ -166,13 +185,7 @@ void main() {
   testWidgets('logs out after inactivity timeout', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'trainer@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'password');
-    await tester.tap(find.text('Sign In'));
-    await tester.pumpAndSettle();
+    await _signInAsCoach(tester);
 
     expect(find.text('Dashboard'), findsOneWidget);
 
@@ -183,9 +196,23 @@ void main() {
   });
 }
 
+Future<void> _signInAsCoach(WidgetTester tester) async {
+  await tester.enterText(
+    find.byType(TextFormField).at(0),
+    'trainer@example.com',
+  );
+  await tester.enterText(find.byType(TextFormField).at(1), 'password');
+  await tester.tap(find.text('Sign In'));
+  await tester.pumpAndSettle();
+  await tester.pump(const Duration(seconds: 3));
+  await tester.pumpAndSettle();
+}
+
 class _FakeAuthRepository implements AuthRepository {
   bool _signedIn = false;
   String _name = 'Trainer';
+  String _email = '';
+  UserRole _role = UserRole.coach;
 
   @override
   bool get hasCurrentUser => _signedIn;
@@ -194,14 +221,29 @@ class _FakeAuthRepository implements AuthRepository {
   String? get currentUserId => _signedIn ? 'test-trainer' : null;
 
   @override
+  String? get currentUserEmail => _signedIn ? _email : null;
+
+  @override
   String get currentUserName => _name;
 
   @override
   String get currentUserLastName => _name;
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  UserRole? get currentUserRole => _signedIn ? _role : null;
+
+  @override
+  Future<UserRole> loadCurrentUserRole() async => _role;
+
+  @override
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required UserRole role,
+  }) async {
     _signedIn = true;
+    _email = email;
+    _role = role;
     _name = _formatUserName(email.split('@').first);
   }
 
@@ -211,14 +253,18 @@ class _FakeAuthRepository implements AuthRepository {
     required String lastName,
     required String email,
     required String password,
+    required UserRole role,
   }) async {
     _signedIn = true;
+    _email = email;
+    _role = role;
     _name = name.trim().isEmpty ? 'Trainer' : name.trim();
   }
 
   @override
   Future<void> signOut() async {
     _signedIn = false;
+    _email = '';
   }
 }
 
@@ -252,7 +298,7 @@ class _FakeClientRepository implements ClientRepository {
         sex: 'Female',
         goal: 'Muscle gain',
         trainingProgram: 'Strength foundation',
-        schedule: 'Mon Wed Fri',
+        schedule: 'Mon / Wed / Fri at 9:00 AM',
         fitnessRegime: 'Full-body strength training.',
         cardioPlan: 'Incline walk twice weekly.',
         joinDate: DateTime(2026, 5, 1),
@@ -272,7 +318,7 @@ class _FakeClientRepository implements ClientRepository {
         sex: 'Male',
         goal: 'Fat loss',
         trainingProgram: 'Conditioning block',
-        schedule: 'Tue Thu',
+        schedule: 'Tue / Thu at 7:00 AM',
         fitnessRegime: 'Circuit training.',
         cardioPlan: 'Zone 2 rowing.',
         joinDate: DateTime(2026, 4, 24),
@@ -315,4 +361,24 @@ class _FakeClientRepository implements ClientRepository {
   String createClientId() {
     return 'client-${_nextId++}';
   }
+}
+
+class _FakeActivityRepository extends ActivityRepository {
+  @override
+  Future<void> log(ActivityEvent event) async {}
+
+  @override
+  Future<void> checkAndLogMissedSessions(List<Client> clients) async {}
+
+  @override
+  Future<void> resolveMissedSession(
+    ActivityEvent event,
+    String outcome,
+  ) async {}
+
+  @override
+  Future<List<ActivityEvent>> getRecent({int limit = 20}) async => [];
+
+  @override
+  Future<List<ActivityEvent>> getAll({ActivityType? filterType}) async => [];
 }

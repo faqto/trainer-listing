@@ -70,7 +70,11 @@ class _HomePageState extends State<HomePage> {
   Future<void> _logout() async {
     await AuthRepository.instance.signOut();
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.login,
+      (route) => false,
+    );
   }
 
   @override

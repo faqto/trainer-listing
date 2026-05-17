@@ -86,11 +86,12 @@ DateTime? parseScheduleDate(String schedule) {
 TimeOfDay? parseScheduleTime(String schedule) {
   final parts = schedule.split(' at ');
   if (parts.length != 2) return null;
+  final timeText = parts[1].split(' for ').first.trim();
 
   final match = RegExp(
     r'^(\d{1,2}):(\d{2})\s*([AP]M)?$',
     caseSensitive: false,
-  ).firstMatch(parts[1].trim());
+  ).firstMatch(timeText);
   if (match == null) return null;
 
   var hour = int.tryParse(match.group(1)!);

@@ -1,0 +1,5 @@
+FitEd Trainer helps fitness coaches manage their clients, training plans, schedules, and progress in one simple place.
+
+Our goal is to make coaching easier, more organized, and more personal. With FitEd Trainer, coaches can track client information, update body metrics, record progress, and keep training details accessible whenever they need them.
+
+This app was created to support trainers in delivering better guidance, staying consistent, and helping clients move closer to their fitness goals.

@@ -25,7 +25,7 @@ class RegisterHeader extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         const Text(
-          'Start managing your clients in minutes',
+          'Manage clients or connect with a coach',
           style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
         ),
       ],

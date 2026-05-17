@@ -6,8 +6,8 @@ import '../helpers/client_metrics.dart';
 import 'auth_repository.dart';
 
 class ActivityRepository {
-  static final ActivityRepository instance = ActivityRepository._();
-  ActivityRepository._();
+  static ActivityRepository instance = ActivityRepository();
+  ActivityRepository();
 
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 

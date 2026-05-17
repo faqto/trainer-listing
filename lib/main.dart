@@ -96,9 +96,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: AuthRepository.instance.hasCurrentUser
-            ? AppRoutes.home
-            : AppRoutes.login,
+        initialRoute: AppRoutes.root,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );

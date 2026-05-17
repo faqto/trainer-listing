@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'welcome_page.dart';
+import '../../models/user_role.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 
@@ -15,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  UserRole _selectedRole = UserRole.coach;
   bool _isLoading = false;
 
   Future<void> _login() async {
@@ -28,12 +30,14 @@ class _LoginPageState extends State<LoginPage> {
       await AuthRepository.instance.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        role: _selectedRole,
       );
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(
+      Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.welcome,
+        (route) => false,
         arguments: WelcomeType.returningUser,
       );
     } on FirebaseAuthException catch (error) {
@@ -60,6 +64,8 @@ class _LoginPageState extends State<LoginPage> {
         return 'Email or password is incorrect.';
       case 'user-disabled':
         return 'This account has been disabled.';
+      case 'role-mismatch':
+        return error.message ?? 'Select the correct account type to sign in.';
       default:
         return error.message ?? 'Unable to sign in. Please try again.';
     }
@@ -118,11 +124,18 @@ class _LoginPageState extends State<LoginPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Manage your clients and track their progress.',
+                          'Sign in as a coach or client.',
                           style: TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 12,
                           ),
+                        ),
+                        const SizedBox(height: 18),
+                        _RoleSelector(
+                          selectedRole: _selectedRole,
+                          onChanged: (role) {
+                            setState(() => _selectedRole = role);
+                          },
                         ),
                         const SizedBox(height: 24),
                         TextFormField(
@@ -192,6 +205,38 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RoleSelector extends StatelessWidget {
+  final UserRole selectedRole;
+  final ValueChanged<UserRole> onChanged;
+
+  const _RoleSelector({required this.selectedRole, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<UserRole>(
+      segments: const [
+        ButtonSegment<UserRole>(
+          value: UserRole.coach,
+          icon: Icon(Icons.sports_outlined),
+          label: Text('Coach'),
+        ),
+        ButtonSegment<UserRole>(
+          value: UserRole.client,
+          icon: Icon(Icons.person_outline),
+          label: Text('Client'),
+        ),
+      ],
+      selected: {selectedRole},
+      showSelectedIcon: false,
+      onSelectionChanged: (selection) => onChanged(selection.first),
+      style: ButtonStyle(
+        minimumSize: WidgetStateProperty.all(const Size(0, 46)),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

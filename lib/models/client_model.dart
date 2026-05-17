@@ -37,12 +37,12 @@ class ProgressEntry {
   factory ProgressEntry.fromMap(Map<String, dynamic> map) {
     return ProgressEntry(
       date: DateTime.parse(map['date']),
-      weightKg: map['weightKg'] ?? 0.0,
-      heightCm: map['heightCm'] ?? 0.0,
-      bodyFatPercent: map['bodyFatPercent'] ?? 0.0,
-      waistCm: map['waistCm'] ?? 0.0,
-      hipsCm: map['hipsCm'] ?? 0.0,
-      chestCm: map['chestCm'] ?? 0.0,
+      weightKg: _readDouble(map['weightKg']),
+      heightCm: _readDouble(map['heightCm']),
+      bodyFatPercent: _readDouble(map['bodyFatPercent']),
+      waistCm: _readDouble(map['waistCm']),
+      hipsCm: _readDouble(map['hipsCm']),
+      chestCm: _readDouble(map['chestCm']),
       note: map['note'] ?? '',
     );
   }
@@ -60,6 +60,8 @@ class ProgressEntry {
 
 class Client {
   final String id;
+  final String? clientUserId;
+  final String? coachId;
   final String name;
   final String email;
   final String phone;
@@ -82,6 +84,8 @@ class Client {
 
   Client({
     required this.id,
+    this.clientUserId,
+    this.coachId,
     required this.name,
     required this.email,
     required this.phone,
@@ -116,6 +120,8 @@ class Client {
 
   Client copyWith({
     String? id,
+    String? clientUserId,
+    String? coachId,
     String? name,
     String? email,
     String? phone,
@@ -138,6 +144,8 @@ class Client {
   }) {
     return Client(
       id: id ?? this.id,
+      clientUserId: clientUserId ?? this.clientUserId,
+      coachId: coachId ?? this.coachId,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
@@ -280,6 +288,8 @@ class Client {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      if (clientUserId != null) 'clientUserId': clientUserId,
+      if (coachId != null) 'coachId': coachId,
       'name': name,
       'email': email,
       'phone': phone,
@@ -305,6 +315,8 @@ class Client {
   factory Client.fromMap(Map<String, dynamic> map, String id) {
     return Client(
       id: id,
+      clientUserId: map['clientUserId'],
+      coachId: map['coachId'],
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
@@ -319,12 +331,12 @@ class Client {
       joinDate: map['joinDate'] != null
           ? DateTime.parse(map['joinDate'])
           : null,
-      weightKg: map['weightKg'] ?? 0.0,
-      heightCm: map['heightCm'] ?? 0.0,
-      bodyFatPercent: map['bodyFatPercent'] ?? 0.0,
-      waistCm: map['waistCm'] ?? 0.0,
-      hipsCm: map['hipsCm'] ?? 0.0,
-      chestCm: map['chestCm'] ?? 0.0,
+      weightKg: _readDouble(map['weightKg']),
+      heightCm: _readDouble(map['heightCm']),
+      bodyFatPercent: _readDouble(map['bodyFatPercent']),
+      waistCm: _readDouble(map['waistCm']),
+      hipsCm: _readDouble(map['hipsCm']),
+      chestCm: _readDouble(map['chestCm']),
       progressEntries: (map['progressEntries'] as List<dynamic>?)
           ?.map((e) => ProgressEntry.fromMap(e as Map<String, dynamic>))
           .toList(),
@@ -336,4 +348,11 @@ String _formatDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
   return '$month/$day/${date.year}';
+}
+
+double _readDouble(Object? value) {
+  if (value is int) return value.toDouble();
+  if (value is double) return value;
+  if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trainer_listing/helpers/client_page_helpers.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/action_buttons.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/body_metrics_section.dart';
+import 'package:trainer_listing/widgets/client/client_information_page/contact_details_section.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/fitness_regime_section.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/info_badges_section.dart';
 import 'package:trainer_listing/widgets/client/client_information_page/notes_section.dart';
@@ -104,6 +105,8 @@ class _ClientInformationPageState extends State<ClientInformationPage> {
       sliver: SliverList.list(
         children: [
           InfoBadgesSection(client: _client!),
+          const SizedBox(height: 16),
+          ContactDetailsSection(client: _client!),
           const SizedBox(height: 16),
           FitnessRegimeSection(client: _client!, onRefresh: _refresh),
           const SizedBox(height: 16),

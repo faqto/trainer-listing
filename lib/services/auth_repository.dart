@@ -1,19 +1,32 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../models/user_role.dart';
 
 abstract class AuthRepository {
   static AuthRepository instance = FirebaseAuthRepository();
 
   bool get hasCurrentUser;
   String? get currentUserId;
+  String? get currentUserEmail;
   String get currentUserName;
+  String get currentUserLastName;
+  UserRole? get currentUserRole;
 
-  Future<void> signIn({required String email, required String password});
+  Future<UserRole> loadCurrentUserRole();
+
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required UserRole role,
+  });
 
   Future<void> register({
     required String name,
     required String email,
     required String password,
     required String lastName,
+    required UserRole role,
   });
 
   Future<void> signOut();
@@ -21,38 +34,109 @@ abstract class AuthRepository {
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuth get _auth => FirebaseAuth.instance;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
   static const String _separator = '|';
+  UserRole? _cachedRole;
+  String? _cachedName;
+  String? _cachedLastName;
+  String? _cachedEmail;
 
   @override
-  bool get hasCurrentUser => _auth.currentUser != null;
+  bool get hasCurrentUser {
+    final signedIn = _auth.currentUser != null;
+    if (!signedIn) _clearCache();
+    return signedIn;
+  }
 
   @override
   String? get currentUserId => _auth.currentUser?.uid;
 
   @override
+  String? get currentUserEmail =>
+      _cachedEmail ?? _auth.currentUser?.email?.trim();
+
+  @override
   String get currentUserName {
+    if (_cachedName != null && _cachedName!.trim().isNotEmpty) {
+      return _cachedName!.trim();
+    }
+
     final user = _auth.currentUser;
-    final displayName = user?.displayName?.trim();
+    final name = _nameFromDisplayName(user?.displayName);
+    if (name.isNotEmpty) return name;
 
-    if (displayName != null && displayName.isNotEmpty) {
-      if (displayName.contains(_separator)) {
-        return displayName.split(_separator).first.trim().replaceAll(',', '');
-      }
-      return displayName.split(RegExp(r'\s+')).first.replaceAll(',', '');
-    }
-
-    final email = user?.email?.trim();
+    final email = currentUserEmail;
     if (email != null && email.isNotEmpty) {
-      return _formatUserName(email.split('@').first).split(' ').first;
+      return _formatUserName(email.split('@').first);
     }
 
-    return 'Trainer';
+    return _cachedRole == UserRole.client ? 'Client' : 'Trainer';
   }
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+  String get currentUserLastName {
+    if (_cachedLastName != null && _cachedLastName!.trim().isNotEmpty) {
+      return _cachedLastName!.trim();
+    }
+
+    final displayName = _auth.currentUser?.displayName?.trim();
+    if (displayName != null &&
+        displayName.isNotEmpty &&
+        displayName.contains(_separator)) {
+      return displayName.split(_separator).first.trim().replaceAll(',', '');
+    }
+
+    final parts = currentUserName
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    return parts.isEmpty ? currentUserName : parts.last;
+  }
+
+  @override
+  UserRole? get currentUserRole => _cachedRole;
+
+  @override
+  Future<UserRole> loadCurrentUserRole() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'Please sign in before loading your profile.',
+      );
+    }
+
+    final snapshot = await _firestore.collection('users').doc(user.uid).get();
+    if (!snapshot.exists || snapshot.data() == null) {
+      final role = UserRole.coach;
+      await _saveUserProfile(
+        user: user,
+        name: currentUserName,
+        lastName: currentUserLastName,
+        role: role,
+        isNew: true,
+      );
+      return role;
+    }
+
+    final data = snapshot.data()!;
+    final role = userRoleFromName(data['role'] as String?);
+    _cacheProfile(data, user, role);
+    return role;
+  }
+
+  @override
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required UserRole role,
+  }) async {
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    await _syncSignedInUser(credential.user, role);
   }
 
   @override
@@ -61,24 +145,141 @@ class FirebaseAuthRepository implements AuthRepository {
     required String email,
     required String password,
     required String lastName,
+    required UserRole role,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
-    final displayName = '${lastName.trim()}$_separator${name.trim()}';
+    final displayName = name.trim();
     await credential.user?.updateDisplayName(displayName);
+    await _saveUserProfile(
+      user: credential.user,
+      name: name,
+      lastName: lastName,
+      role: role,
+      isNew: true,
+    );
+  }
+
+  Future<void> _syncSignedInUser(User? user, UserRole selectedRole) async {
+    if (user == null) return;
+
+    final docRef = _firestore.collection('users').doc(user.uid);
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists || snapshot.data() == null) {
+      await _saveUserProfile(
+        user: user,
+        name: _nameFromDisplayName(user.displayName),
+        lastName: _lastNameFromDisplayName(user.displayName),
+        role: selectedRole,
+        isNew: true,
+      );
+      return;
+    }
+
+    final data = snapshot.data()!;
+    final actualRole = userRoleFromName(data['role'] as String?);
+    if (actualRole != selectedRole) {
+      await _auth.signOut();
+      _clearCache();
+      throw FirebaseAuthException(
+        code: 'role-mismatch',
+        message:
+            'This account is registered as a ${actualRole.label.toLowerCase()}. Select ${actualRole.label} to sign in.',
+      );
+    }
+
+    _cacheProfile(data, user, actualRole);
+  }
+
+  Future<void> _saveUserProfile({
+    required User? user,
+    required String name,
+    required String lastName,
+    required UserRole role,
+    required bool isNew,
+  }) async {
+    if (user == null) return;
+
+    final cleanName = name.trim().isNotEmpty
+        ? name.trim()
+        : _formatUserName(user.email?.split('@').first ?? '');
+    final cleanLastName = lastName.trim();
+    final data = <String, dynamic>{
+      'name': cleanName.isEmpty ? role.label : cleanName,
+      'lastName': cleanLastName,
+      'email': user.email?.trim() ?? '',
+      'role': role.name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (isNew) {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .set(data, SetOptions(merge: true));
+    _cacheProfile(data, user, role);
+  }
+
+  void _cacheProfile(Map<String, dynamic> data, User user, UserRole role) {
+    _cachedRole = role;
+    _cachedName = (data['name'] as String?)?.trim();
+    _cachedLastName = (data['lastName'] as String?)?.trim();
+    _cachedEmail = (data['email'] as String?)?.trim() ?? user.email?.trim();
+  }
+
+  void _clearCache() {
+    _cachedRole = null;
+    _cachedName = null;
+    _cachedLastName = null;
+    _cachedEmail = null;
   }
 
   @override
   Future<void> signOut() async {
+    _clearCache();
     await _auth.signOut();
   }
 }
 
+String _nameFromDisplayName(String? value) {
+  final displayName = value?.trim() ?? '';
+  if (displayName.isEmpty) return '';
+  if (!displayName.contains(FirebaseAuthRepository._separator)) {
+    return displayName;
+  }
+
+  final parts = displayName.split(FirebaseAuthRepository._separator);
+  if (parts.length < 2) return parts.first.trim();
+  return parts.sublist(1).join(FirebaseAuthRepository._separator).trim();
+}
+
+String _lastNameFromDisplayName(String? value) {
+  final displayName = value?.trim() ?? '';
+  if (displayName.isEmpty) return '';
+  if (displayName.contains(FirebaseAuthRepository._separator)) {
+    return displayName
+        .split(FirebaseAuthRepository._separator)
+        .first
+        .trim()
+        .replaceAll(',', '');
+  }
+
+  final parts = displayName
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
+  return parts.isEmpty ? '' : parts.last;
+}
+
 String _formatUserName(String value) {
   final cleaned = value.trim().replaceAll(RegExp(r'[._-]+'), ' ');
-  if (cleaned.isEmpty) return 'Trainer';
+  if (cleaned.isEmpty) return '';
   return cleaned
       .split(RegExp(r'\s+'))
       .map((part) {

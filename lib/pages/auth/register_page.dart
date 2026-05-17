@@ -9,6 +9,7 @@ import 'package:trainer_listing/widgets/register_page/register_password_hint.dar
 import 'package:trainer_listing/widgets/register_page/register_section_header.dart';
 import 'package:trainer_listing/widgets/register_page/register_submit_button.dart';
 
+import '../../models/user_role.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
@@ -27,6 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _initialController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  UserRole _selectedRole = UserRole.coach;
   bool _isLoading = false;
 
   Future<void> _register() async {
@@ -35,7 +37,8 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!await ConfirmationDialog.show(
       context: context,
       title: 'Confirm Account Creation',
-      content: 'Create a new trainer account for $fullName?',
+      content:
+          'Create a new ${_selectedRole.label.toLowerCase()} account for $fullName?',
       confirmText: 'Create Account',
     )) {
       return;
@@ -49,11 +52,13 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         lastName: _lastNameController.text.trim(),
+        role: _selectedRole,
       );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(
+      Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.welcome,
+        (route) => false,
         arguments: WelcomeType.newUser,
       );
     } on FirebaseAuthException catch (error) {
@@ -151,7 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.06),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -162,6 +167,18 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const RegisterSectionHeader(
+              icon: Icons.switch_account_outlined,
+              label: 'Account type',
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: _RoleSelector(
+                selectedRole: _selectedRole,
+                onChanged: (role) => setState(() => _selectedRole = role),
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
             const RegisterSectionHeader(
               icon: Icons.person_outline_rounded,
               label: 'Personal information',
@@ -246,6 +263,38 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _RoleSelector extends StatelessWidget {
+  final UserRole selectedRole;
+  final ValueChanged<UserRole> onChanged;
+
+  const _RoleSelector({required this.selectedRole, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<UserRole>(
+      segments: const [
+        ButtonSegment<UserRole>(
+          value: UserRole.coach,
+          icon: Icon(Icons.sports_outlined),
+          label: Text('Coach'),
+        ),
+        ButtonSegment<UserRole>(
+          value: UserRole.client,
+          icon: Icon(Icons.person_outline),
+          label: Text('Client'),
+        ),
+      ],
+      selected: {selectedRole},
+      showSelectedIcon: false,
+      onSelectionChanged: (selection) => onChanged(selection.first),
+      style: ButtonStyle(
+        minimumSize: WidgetStateProperty.all(const Size(0, 46)),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

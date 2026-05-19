@@ -1,51 +1,67 @@
 Privacy Policy for FitED
-
 Effective Date: May 16, 2026
 
-1. Scope of Service
+1. Scope of Service & User Accounts
+FitED is a cloud-hosted mobile application designed to facilitate physical progress tracking and performance communication between professional fitness trainers and their clients.
 
-FitED is a cloud-hosted utility mobile application designed exclusively for professional fitness trainers to record, track, and monitor the physical progress of their individual clients.
+Trainer Accounts: Built for professional fitness trainers to record, track, monitor, and manage the physical progress of their individual clients.
 
-Important: This App is built for operational use by Trainers only. Clients do not hold user accounts, login credentials, or direct interface access to the application or the cloud infrastructure.
+Client Accounts: Built for individual clients to log in and securely view the progress metrics, performance charts, and workout logs input exclusively by their designated Trainer. Client accounts are view-only regarding historical data logs.
+
+Mandatory Registration Requirement: Neither Trainers nor Clients can initialize, create, or complete an account registration within the application without explicitly reviewing and checking the agreement box for this Privacy Policy.
 
 2. Data Collection & Sensitive Physical Metrics
+FitED processes data for both user types to render real-time progress tracking:
 
-The application processes personal fitness and biometric performance metrics entered exclusively by the authenticated Trainer. This data includes:
+A. Trainer Data
+Account Credentials: Email, password, or biometric login data managed via Google Firebase.
+
+Business Analytics: Trainer profile details, app usage metrics, and subscription data.
+
+B. Client Data (Sensitive Physical Metrics)
+To provide clients with clear visual tracking, the application processes sensitive personal fitness metrics entered only by the authenticated Trainer:
 
 Progress Metrics: Body weight, body fat percentage, and precise anthropometric physical measurements.
 
 Performance Logs: Comprehensive historical logs of physical workouts, including weights, sets, repetitions, and timestamps.
 
 3. Data Storage & Cloud Infrastructure (Firebase)
+All information entered into the application by the Trainer is transmitted to and stored on a secure cloud database managed through Google Firebase.
 
-All information entered into the application is transmitted to and stored on a secure cloud database managed through Google Firebase.
-
-Data is synchronized in real-time across the Trainer's authenticated devices.
+Data is synchronized in real-time across both the Trainer's and the Client's authenticated application interfaces.
 
 While the data is securely hosted within Firebase cloud architecture (utilizing encryption protocols for data both in transit and at rest), the application developer operates as the Data Controller responsible for the database backend.
 
-4. Mandatory Client Consent Framework
-
+4. Mandatory Client Consent & Dual-Gate Framework
 Because physical metrics constitute sensitive health-adjacent information under modern data protection laws (such as GDPR and state-level privacy acts), FitED strictly prohibits unauthorized data logging.
 
-The Consent Gate: Before a Trainer can initialize a new profile or upload a client's physical metrics to the Firebase database, the client must be presented with the in-app disclosure screen.
+Account Creation Gate: A Client must explicitly consent to this policy when setting up their view-only account.
 
-The client must physically review the terms on the Trainer's device and check the digital authorization box.
+In-App Consent Gate: Before a Trainer can initialize a new profile or upload a client's physical metrics to the Firebase database, the client must be presented with the in-app disclosure screen. The client must physically review the terms on the Trainer's device and check the digital authorization box.
 
 The app logs this explicit consent (consentGranted = true) along with a timestamp into Firebase before unlocking the profile data-entry interface.
 
 5. Data Subject Rights (Access & Erasure)
+Both Trainers and Clients retain full legal rights over their personal data stored in our database.
 
-Even though clients do not possess direct login accounts to the FitED platform, they retain full legal rights over their personal data stored in our database:
+For Trainers:
+Trainers can update account details, manage rosters, or delete their entire account directly through the application settings. Deleting a Trainer account permanently purges all associated client database links.
 
-Right to Deletion (The Right to be Forgotten): A client may demand the permanent removal of their fitness history at any time.
+For Clients:
+Clients hold full ownership over their sensitive data and can exercise their rights at any time:
 
-Execution: A client can exercise this right by instructing their Trainer to delete their profile directly inside the application UI, or by emailing the developer support desk at support@fitedapp.com. Upon receiving a request via support, the developer will manually purge all associated document blocks from the Firebase database within standard regulatory timelines.
+Right to Access: Clients can log into their private account at any time to view all historical data, charts, and progress logs entered by their Trainer.
+
+Right to Deletion (The Right to be Forgotten): A client may demand the permanent removal of their fitness history and account profile.
+
+Execution: A client can request a complete deletion of their information directly from their Trainer. Once requested, the Trainer can delete the client's profile from the application UI. Alternatively, clients can email the developer support desk at support@fitedapp.com. Upon receiving a verified request, the developer will manually purge all associated document blocks from the Firebase database within standard regulatory timelines.
 
 6. Data Sharing & Security Commitments
-
-We strictly enforce data minimization principles. We do not sell, rent, lease, or share client progress profiles or trainer data with third-party advertising brokers or commercial marketing networks. Data is utilized strictly to render performance progress charts and visualizations for the tracking trainer.
+We strictly enforce data minimization principles. We do not sell, rent, lease, or share client progress profiles or trainer data with third-party advertising brokers or commercial marketing networks. Data is utilized strictly to render performance progress charts and visualizations for the tracking trainer and the viewing client.
 
 7. Contact Us
+For any privacy inquiries, data access requests, or urgent profile deletion requirements, please contact us. We welcome inquiries from both trainers and clients:
 
-For any privacy inquiries, data access requests, or urgent profile deletion requirements, please contact: Email: support@fitedapp.com
+Email: support@fitedapp.com
+
+Note for Clients: If reaching out directly to support regarding data deletion, please include your registered account email and your Trainer's name so we can securely locate and verify your profile blocks.

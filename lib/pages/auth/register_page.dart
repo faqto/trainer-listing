@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'welcome_page.dart';
 import 'package:trainer_listing/widgets/register_page/register_field.dart';
 import 'package:trainer_listing/widgets/register_page/register_footer.dart';
 import 'package:trainer_listing/widgets/register_page/register_header.dart';
@@ -15,7 +14,7 @@ import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../widgets/confirmation_dialog/confirmation_dialog.dart';
 
-const String _privacyPolicyAsset = 'assets/docs/fited_privacy_policy.txt';
+const String _privacyPolicyAsset = 'assets/text/privacy_policy.txt';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -76,10 +75,8 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
-        AppRoutes.welcome,
-        (route) => false,
-        arguments: WelcomeType.newUser,
         AppRoutes.emailVerification,
+        (route) => false,
         arguments: _emailController.text.trim(),
       );
     } on FirebaseAuthException catch (error) {
@@ -136,7 +133,19 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _showPrivacyPolicy() async {
-    final policyText = await rootBundle.loadString(_privacyPolicyAsset);
+    String policyText;
+    try {
+      policyText = await rootBundle.loadString(_privacyPolicyAsset);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to open the Privacy Policy right now.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     if (!mounted) return;
     await showDialog<void>(

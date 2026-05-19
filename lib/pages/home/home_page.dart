@@ -102,11 +102,6 @@ class _HomePageState extends State<HomePage> {
         final clients = snapshot.data?.$1 ?? [];
         final activityEvents = snapshot.data?.$2 ?? [];
 
-        // Check for missed sessions after data loads
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          await ActivityRepository.instance.checkAndLogMissedSessions(clients);
-        });
-
         final recentActivities = activityEvents.map((event) {
           return HomeActivity(
             name: event.clientName,

@@ -167,10 +167,7 @@ class DashboardTab extends StatelessWidget {
             ...recentActivity.map(
               (activity) => Padding(
                 padding: const EdgeInsets.only(bottom: space1),
-                child: ActivityCard(
-                  activity: activity,
-                  onResolved: onActivityResolved,
-                ),
+                child: ActivityCard(activity: activity),
               ),
             ),
         ],

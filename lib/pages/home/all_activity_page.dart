@@ -23,7 +23,6 @@ class _AllActivityPageState extends State<AllActivityPage> {
     'Body Updates': ActivityType.bodyUpdated,
     'Regime Changes': ActivityType.regimeChanged,
     'Sessions Completed': ActivityType.sessionCompleted,
-    'Missed Sessions': ActivityType.sessionMissed,
   };
 
   @override
@@ -107,11 +106,7 @@ class _AllActivityPageState extends State<AllActivityPage> {
                       );
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: ActivityCard(
-                          activity: activity,
-                          event: event,
-                          onResolved: _loadActivity,
-                        ),
+                        child: ActivityCard(activity: activity, event: event),
                       );
                     },
                   ),

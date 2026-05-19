@@ -4,7 +4,6 @@ enum ActivityType {
   bodyUpdated,
   regimeChanged,
   sessionCompleted,
-  sessionMissed,
 }
 
 class ActivityEvent {
@@ -14,25 +13,13 @@ class ActivityEvent {
   final String clientName;
   final String description;
   final DateTime timestamp;
-
-  //For missed sessions: whether the trainer has already resolved it
-  //null = not a missed session event
-  //false = unresolved (needs trainer action)
-  //true = resolved
-  final bool? missedResolved;
-
   ActivityEvent({
     required this.id,
     required this.type,
     required this.clientId,
     required this.clientName,
     required this.description,
-    required this.timestamp,
-    this.missedResolved,
-  });
-
-  bool get isMissedUnresolved =>
-      type == ActivityType.sessionMissed && missedResolved == false;
+    required this.timestamp});
 
   IconData get icon {
     switch (type) {
@@ -42,8 +29,6 @@ class ActivityEvent {
         return Icons.fitness_center_rounded;
       case ActivityType.sessionCompleted:
         return Icons.check_circle_outline_rounded;
-      case ActivityType.sessionMissed:
-        return Icons.help_outline_rounded;
     }
   }
 
@@ -55,8 +40,6 @@ class ActivityEvent {
         return const Color(0xFF8B5CF6);
       case ActivityType.sessionCompleted:
         return const Color(0xFF10B981);
-      case ActivityType.sessionMissed:
-        return const Color(0xFFF59E0B);
     }
   }
 
@@ -75,21 +58,8 @@ class ActivityEvent {
       'clientId': clientId,
       'clientName': clientName,
       'description': description,
-      'timestamp': timestamp.toIso8601String(),
-      if (missedResolved != null) 'missedResolved': missedResolved,
+      'timestamp': timestamp.toIso8601String()
     };
-  }
-
-  ActivityEvent copyWith({bool? missedResolved}) {
-    return ActivityEvent(
-      id: id,
-      type: type,
-      clientId: clientId,
-      clientName: clientName,
-      description: description,
-      timestamp: timestamp,
-      missedResolved: missedResolved ?? this.missedResolved,
-    );
   }
 
   factory ActivityEvent.fromMap(Map<String, dynamic> map, String id) {
@@ -104,8 +74,7 @@ class ActivityEvent {
       description: map['description'] ?? '',
       timestamp: map['timestamp'] != null
           ? DateTime.parse(map['timestamp'])
-          : DateTime.now(),
-      missedResolved: map['missedResolved'] as bool?,
+          : DateTime.now()
     );
   }
 }

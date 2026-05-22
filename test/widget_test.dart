@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:FitEd/main.dart';
-import 'package:FitEd/models/activity_event.dart';
-import 'package:FitEd/models/client_model.dart';
-import 'package:FitEd/models/user_role.dart';
-import 'package:FitEd/services/activity_repository.dart';
-import 'package:FitEd/services/auth_repository.dart';
-import 'package:FitEd/services/client_repository.dart';
+import 'package:fit_ed/main.dart';
+import 'package:fit_ed/models/activity_event.dart';
+import 'package:fit_ed/models/client_model.dart';
+import 'package:fit_ed/models/deletion_request.dart';
+import 'package:fit_ed/models/user_role.dart';
+import 'package:fit_ed/services/activity_repository.dart';
+import 'package:fit_ed/services/auth_repository.dart';
+import 'package:fit_ed/services/client_repository.dart';
+import 'package:fit_ed/services/deletion_request_repository.dart';
 
 void main() {
   setUp(() async {
     AuthRepository.instance = _FakeAuthRepository();
     ClientRepository.instance = _FakeClientRepository();
     ActivityRepository.instance = _FakeActivityRepository();
+    DeletionRequestRepository.instance = _FakeDeletionRequestRepository();
     await ClientRepository.instance.resetForTesting();
+    await DeletionRequestRepository.instance.resetForTesting();
   });
 
   testWidgets('signs in and shows the dashboard', (WidgetTester tester) async {
@@ -384,17 +388,65 @@ class _FakeActivityRepository extends ActivityRepository {
   Future<void> log(ActivityEvent event) async {}
 
   @override
-  Future<void> checkAndLogMissedSessions(List<Client> clients) async {}
-
-  @override
-  Future<void> resolveMissedSession(
-    ActivityEvent event,
-    String outcome,
-  ) async {}
-
-  @override
   Future<List<ActivityEvent>> getRecent({int limit = 20}) async => [];
 
   @override
   Future<List<ActivityEvent>> getAll({ActivityType? filterType}) async => [];
+}
+
+class _FakeDeletionRequestRepository implements DeletionRequestRepository {
+  final List<DeletionRequest> _requests = [];
+
+  @override
+  Future<List<DeletionRequest>> get pendingRequests async => _requests
+      .where((request) => request.status == DeletionRequestStatus.pending)
+      .toList();
+
+  @override
+  Future<DeletionRequest?> getCurrentClientRequest({
+    required String coachId,
+    required String clientId,
+  }) async {
+    for (final request in _requests) {
+      if (request.coachId == coachId && request.clientId == clientId) {
+        return request;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<void> submitCurrentClientRequest({
+    required String coachId,
+    required Client client,
+    required String reason,
+  }) async {
+    _requests.add(
+      DeletionRequest(
+        id: client.id,
+        clientId: client.id,
+        clientName: client.name,
+        clientEmail: client.email,
+        coachId: coachId,
+        reason: reason,
+        requestedAt: DateTime(2026, 5, 20),
+      ),
+    );
+  }
+
+  @override
+  Future<void> approveRequest(DeletionRequest request) async {
+    _requests.removeWhere((entry) => entry.id == request.id);
+    await ClientRepository.instance.deleteClient(request.clientId);
+  }
+
+  @override
+  Future<void> rejectRequest(DeletionRequest request) async {
+    _requests.removeWhere((entry) => entry.id == request.id);
+  }
+
+  @override
+  Future<void> resetForTesting() async {
+    _requests.clear();
+  }
 }

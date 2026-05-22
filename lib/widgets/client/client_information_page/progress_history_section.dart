@@ -1,4 +1,4 @@
-import 'package:FitEd/widgets/client/client_information_page/progress_entry_card.dart';
+import 'package:fit_ed/widgets/client/client_information_page/progress_entry_card.dart';
 import 'package:flutter/material.dart';
 import '../../../models/client_model.dart';
 import '../../../widgets/client/client_section_card.dart';

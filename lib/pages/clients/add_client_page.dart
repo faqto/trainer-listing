@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:FitEd/widgets/client/add%20client%20page/add_client_basic_info_section.dart';
-import 'package:FitEd/widgets/client/add%20client%20page/add_client_training_info_section.dart';
+import 'package:fit_ed/widgets/client/add%20client%20page/add_client_basic_info_section.dart';
+import 'package:fit_ed/widgets/client/add%20client%20page/add_client_training_info_section.dart';
 
 import '../../helpers/firebase_error_messages.dart';
 import '../../models/client_model.dart';

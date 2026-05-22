@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import '../../helpers/client_page_helpers.dart';
 import '../../models/app_user_profile.dart';
 import '../../models/client_model.dart';
+import '../../models/deletion_request.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
+import '../../services/deletion_request_repository.dart';
 import '../../services/user_repository.dart';
 import '../../widgets/client/client_information_page/progress_entry_card.dart';
 import '../../widgets/client/client_section_card.dart';
 import '../../widgets/client/client_section_title.dart';
+import '../home/settings_tab.dart';
 import 'client_home_page.dart';
 
 class ClientFitnessPage extends StatefulWidget {
@@ -21,6 +24,7 @@ class ClientFitnessPage extends StatefulWidget {
 
 class _ClientFitnessPageState extends State<ClientFitnessPage> {
   ClientDashboardData? _data;
+  int _selectedIndex = 0;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -66,20 +70,38 @@ class _ClientFitnessPageState extends State<ClientFitnessPage> {
     if (mounted) await _load();
   }
 
-  Future<void> _showMetricsSheet(Client client) async {
-    final saved = await showModalBottomSheet<bool>(
+  Future<void> _requestDeletion(AppUserProfile profile, Client client) async {
+    final coachId = profile.assignedCoachId;
+    if (coachId == null || coachId.isEmpty) return;
+
+    final reason = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (sheetContext) => _MetricUpdateSheet(client: client),
+      builder: (sheetContext) => const _DeletionRequestSheet(),
     );
+    if (reason == null || !mounted) return;
 
-    if (saved != true || !mounted) return;
-    await _load();
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Body metrics updated.')));
+    try {
+      await DeletionRequestRepository.instance.submitCurrentClientRequest(
+        coachId: coachId,
+        client: client,
+        reason: reason,
+      );
+      if (!mounted) return;
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data deletion request sent.')),
+      );
+    } on FirebaseException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message ?? 'Unable to send deletion request.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -134,25 +156,8 @@ class _ClientFitnessPageState extends State<ClientFitnessPage> {
     final client = data.client!;
     final progressEntries = [...client.progressEntries]
       ..sort((a, b) => b.date.compareTo(a.date));
-
-    return Scaffold(
-      backgroundColor: clientPageBackgroundColor,
-      appBar: AppBar(
-        title: const Text('My Fitness'),
-        actions: [
-          IconButton(
-            tooltip: 'Edit details',
-            onPressed: _editDetails,
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          IconButton(
-            tooltip: 'Sign out',
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
+    final pages = [
+      RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -164,21 +169,56 @@ class _ClientFitnessPageState extends State<ClientFitnessPage> {
             const SizedBox(height: 16),
             _CoachPlanCard(client: client),
             const SizedBox(height: 16),
-            _BodyMetricsCard(
-              client: client,
-              onUpdate: () => _showMetricsSheet(client),
-            ),
+            _BodyMetricsCard(client: client),
             const SizedBox(height: 16),
-            _ProgressCard(
-              client: client,
-              progressEntries: progressEntries,
-              onUpdate: () => _showMetricsSheet(client),
-            ),
+            _ProgressCard(client: client, progressEntries: progressEntries),
             const SizedBox(height: 16),
             _SuggestionsCard(client: client),
+            const SizedBox(height: 16),
+            _DeletionRequestCard(
+              profile: profile,
+              client: client,
+              onRequest: () => _requestDeletion(profile, client),
+            ),
             const SizedBox(height: 24),
           ],
         ),
+      ),
+      SettingsTab(onLogout: _logout),
+    ];
+
+    return Scaffold(
+      backgroundColor: clientPageBackgroundColor,
+      appBar: AppBar(
+        title: Text(_selectedIndex == 0 ? 'My Fitness' : 'Settings'),
+        actions: _selectedIndex == 0
+            ? [
+                IconButton(
+                  tooltip: 'Edit details',
+                  onPressed: _editDetails,
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+              ]
+            : null,
+      ),
+      body: IndexedStack(index: _selectedIndex, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) => setState(() {
+          _selectedIndex = index;
+        }),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.monitor_heart_outlined),
+            selectedIcon: Icon(Icons.monitor_heart),
+            label: 'Fitness',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }
@@ -410,24 +450,14 @@ class _CoachPlanCard extends StatelessWidget {
 
 class _BodyMetricsCard extends StatelessWidget {
   final Client client;
-  final VoidCallback onUpdate;
 
-  const _BodyMetricsCard({required this.client, required this.onUpdate});
+  const _BodyMetricsCard({required this.client});
 
   @override
   Widget build(BuildContext context) {
     return ClientSectionCard(
       children: [
-        Row(
-          children: [
-            const Expanded(child: ClientSectionTitle('Body Metrics')),
-            TextButton.icon(
-              onPressed: onUpdate,
-              icon: const Icon(Icons.add_chart_outlined),
-              label: const Text('Update'),
-            ),
-          ],
-        ),
+        const ClientSectionTitle('Body Metrics'),
         const SizedBox(height: 10),
         _DetailLine(
           label: 'Weight',
@@ -453,13 +483,8 @@ class _BodyMetricsCard extends StatelessWidget {
 class _ProgressCard extends StatelessWidget {
   final Client client;
   final List<ProgressEntry> progressEntries;
-  final VoidCallback onUpdate;
 
-  const _ProgressCard({
-    required this.client,
-    required this.progressEntries,
-    required this.onUpdate,
-  });
+  const _ProgressCard({required this.client, required this.progressEntries});
 
   @override
   Widget build(BuildContext context) {
@@ -467,16 +492,7 @@ class _ProgressCard extends StatelessWidget {
 
     return ClientSectionCard(
       children: [
-        Row(
-          children: [
-            const Expanded(child: ClientSectionTitle('Progress Tracking')),
-            TextButton.icon(
-              onPressed: onUpdate,
-              icon: const Icon(Icons.post_add_outlined),
-              label: const Text('Log'),
-            ),
-          ],
-        ),
+        const ClientSectionTitle('Progress Tracking'),
         const SizedBox(height: 10),
         _DetailLine(label: 'Entries', value: progressEntries.length.toString()),
         _DetailLine(label: 'Weight Trend', value: client.weightTrendLabel),
@@ -507,7 +523,7 @@ class _SuggestionsCard extends StatelessWidget {
           client.cardioPlan.trim().isEmpty)
         'Your coach plan will appear here after your coach adds it.',
       if (client.progressEntries.length < 2)
-        'Log body metrics again later to start seeing a trend.',
+        'Your trainer can record follow-up body metrics to show progress trends.',
       if (client.weightKg > 0 && client.heightCm > 0)
         'Keep weight and measurements updated from the same scale and time of day.',
     ];
@@ -534,6 +550,128 @@ class _SuggestionsCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DeletionRequestCard extends StatelessWidget {
+  final AppUserProfile profile;
+  final Client client;
+  final VoidCallback onRequest;
+
+  const _DeletionRequestCard({
+    required this.profile,
+    required this.client,
+    required this.onRequest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final coachId = profile.assignedCoachId;
+    if (coachId == null || coachId.isEmpty) return const SizedBox.shrink();
+
+    return FutureBuilder<DeletionRequest?>(
+      future: DeletionRequestRepository.instance.getCurrentClientRequest(
+        coachId: coachId,
+        clientId: client.id,
+      ),
+      builder: (context, snapshot) {
+        final request = snapshot.data;
+        final isPending = request?.isPending == true;
+
+        return ClientSectionCard(
+          children: [
+            const ClientSectionTitle('Data Privacy'),
+            const SizedBox(height: 10),
+            Text(
+              isPending
+                  ? 'Your data deletion request is waiting for trainer review.'
+                  : 'Ask your trainer to review and delete your client records.',
+              style: const TextStyle(color: Color(0xFF475569)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: isPending ? null : onRequest,
+                icon: Icon(
+                  isPending
+                      ? Icons.hourglass_top_rounded
+                      : Icons.delete_outline_rounded,
+                ),
+                label: Text(isPending ? 'Request Pending' : 'Request Deletion'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DeletionRequestSheet extends StatefulWidget {
+  const _DeletionRequestSheet();
+
+  @override
+  State<_DeletionRequestSheet> createState() => _DeletionRequestSheetState();
+}
+
+class _DeletionRequestSheetState extends State<_DeletionRequestSheet> {
+  final _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Request Data Deletion',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Close',
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _reasonController,
+            decoration: const InputDecoration(
+              labelText: 'Reason',
+              alignLabelWithHint: true,
+            ),
+            minLines: 3,
+            maxLines: 4,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () =>
+                  Navigator.pop(context, _reasonController.text.trim()),
+              icon: const Icon(Icons.send_outlined),
+              label: const Text('Submit Request'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -576,273 +714,10 @@ class _DetailLine extends StatelessWidget {
   }
 }
 
-class _MetricUpdateSheet extends StatefulWidget {
-  final Client client;
-
-  const _MetricUpdateSheet({required this.client});
-
-  @override
-  State<_MetricUpdateSheet> createState() => _MetricUpdateSheetState();
-}
-
-class _MetricUpdateSheetState extends State<_MetricUpdateSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _weightController;
-  late final TextEditingController _heightController;
-  late final TextEditingController _bodyFatController;
-  late final TextEditingController _waistController;
-  late final TextEditingController _hipsController;
-  late final TextEditingController _chestController;
-  late final TextEditingController _noteController;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _weightController = TextEditingController(
-      text: _initialMetric(widget.client.weightKg),
-    );
-    _heightController = TextEditingController(
-      text: _initialMetric(widget.client.heightCm),
-    );
-    _bodyFatController = TextEditingController(
-      text: _initialMetric(widget.client.bodyFatPercent),
-    );
-    _waistController = TextEditingController(
-      text: _initialMetric(widget.client.waistCm),
-    );
-    _hipsController = TextEditingController(
-      text: _initialMetric(widget.client.hipsCm),
-    );
-    _chestController = TextEditingController(
-      text: _initialMetric(widget.client.chestCm),
-    );
-    _noteController = TextEditingController();
-  }
-
-  Future<void> _save() async {
-    if (_isSaving || !_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-    final progressEntry = ProgressEntry(
-      weightKg: parseMetric(_weightController.text),
-      heightCm: parseMetric(_heightController.text),
-      bodyFatPercent: parseMetric(_bodyFatController.text),
-      waistCm: parseMetric(_waistController.text),
-      hipsCm: parseMetric(_hipsController.text),
-      chestCm: parseMetric(_chestController.text),
-      note: _noteController.text.trim(),
-    );
-
-    try {
-      await UserRepository.instance.updateCurrentClientMetrics(progressEntry);
-      if (!mounted) return;
-      Navigator.pop(context, true);
-    } on FirebaseException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message ?? 'Unable to save metrics.')),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to save metrics: $error')));
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  String? _validateMetric(
-    String? value,
-    String label, {
-    bool required = false,
-    double? max,
-  }) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return required ? 'Enter $label' : null;
-
-    final number = double.tryParse(text.replaceAll(',', '.'));
-    if (number == null) return 'Enter a valid $label';
-    if (number <= 0) return '$label must be above zero';
-    if (max != null && number > max) return '$label looks too high';
-    return null;
-  }
-
-  Widget _metricField({
-    required TextEditingController controller,
-    required String label,
-    required String validationLabel,
-    bool required = false,
-    double? max,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(labelText: label),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      validator: (value) =>
-          _validateMetric(value, validationLabel, required: required, max: max),
-    );
-  }
-
-  @override
-  void dispose() {
-    _weightController.dispose();
-    _heightController.dispose();
-    _bodyFatController.dispose();
-    _waistController.dispose();
-    _hipsController.dispose();
-    _chestController.dispose();
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.viewInsetsOf(context).bottom;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 16),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Update Body Metrics',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Close',
-                    onPressed: _isSaving ? null : () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _metricField(
-                      controller: _weightController,
-                      label: 'Weight (kg)',
-                      validationLabel: 'weight',
-                      required: true,
-                      max: 500,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _metricField(
-                      controller: _heightController,
-                      label: 'Height (cm)',
-                      validationLabel: 'height',
-                      required: true,
-                      max: 300,
-                    ),
-                  ),
-                ],
-              ),
-              clientFieldGap,
-              Row(
-                children: [
-                  Expanded(
-                    child: _metricField(
-                      controller: _bodyFatController,
-                      label: 'Body Fat (%)',
-                      validationLabel: 'body fat',
-                      max: 100,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _metricField(
-                      controller: _waistController,
-                      label: 'Waist (cm)',
-                      validationLabel: 'waist',
-                      max: 300,
-                    ),
-                  ),
-                ],
-              ),
-              clientFieldGap,
-              Row(
-                children: [
-                  Expanded(
-                    child: _metricField(
-                      controller: _hipsController,
-                      label: 'Hips (cm)',
-                      validationLabel: 'hips',
-                      max: 300,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _metricField(
-                      controller: _chestController,
-                      label: 'Chest (cm)',
-                      validationLabel: 'chest',
-                      max: 300,
-                    ),
-                  ),
-                ],
-              ),
-              clientFieldGap,
-              TextFormField(
-                controller: _noteController,
-                decoration: const InputDecoration(
-                  labelText: 'Progress note',
-                  alignLabelWithHint: true,
-                ),
-                minLines: 2,
-                maxLines: 3,
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _save,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.check_circle_outline),
-                  label: const Text('Save Metrics'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 String _metricValue(double value, String unit) {
   if (value <= 0) return 'Not set';
   final text = value == value.roundToDouble()
       ? value.toStringAsFixed(0)
       : value.toStringAsFixed(1);
   return unit == '%' ? '$text%' : '$text $unit';
-}
-
-String _initialMetric(double value) {
-  if (value <= 0) return '';
-  return value == value.roundToDouble()
-      ? value.toStringAsFixed(0)
-      : value.toString();
 }

@@ -53,6 +53,17 @@ service cloud.firestore {
       match /activity/{activityId} {
         allow read, create, update, delete: if ownsUser(userId);
       }
+
+      match /deletionRequests/{requestId} {
+        allow read: if ownsUser(userId)
+          || (signedIn() && requestId == request.auth.uid);
+        allow create, update: if ownsUser(userId)
+          || (signedIn()
+            && requestId == request.auth.uid
+            && request.resource.data.clientId == request.auth.uid
+            && request.resource.data.coachId == userId);
+        allow delete: if ownsUser(userId);
+      }
     }
   }
 }

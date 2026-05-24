@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
-        title: 'FitEd Trainer',
+        title: 'FitED',
         theme: ThemeData(
           fontFamily: 'NunitoSans',
           colorScheme: ColorScheme.fromSeed(

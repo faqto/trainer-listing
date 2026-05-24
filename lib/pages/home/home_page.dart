@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import '../../helpers/firebase_error_messages.dart';
 import '../../models/activity_event.dart';
 import '../../models/client_model.dart';
+import '../../models/deletion_request.dart';
 import '../../models/home_activity.dart';
 import '../../routes/app_routes.dart';
 import '../../services/activity_repository.dart';
 import '../../services/auth_repository.dart';
 import '../../services/client_repository.dart';
+import '../../services/deletion_request_repository.dart';
 import '../../widgets/home/home_load_error.dart';
 import 'clients_tab.dart';
 import 'dashboard_tab.dart';
@@ -29,6 +31,7 @@ class _HomePageState extends State<HomePage> {
 
   late Future<List<Client>> _clientsFuture;
   late Future<List<ActivityEvent>> _activityFuture;
+  late Future<List<DeletionRequest>> _deletionRequestsFuture;
 
   @override
   void initState() {
@@ -40,6 +43,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _clientsFuture = ClientRepository.instance.clients;
       _activityFuture = ActivityRepository.instance.getRecent();
+      _deletionRequestsFuture =
+          DeletionRequestRepository.instance.pendingRequests;
     });
   }
 
@@ -79,11 +84,21 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<(List<Client>, List<ActivityEvent>)>(
-      future: Future.wait([_clientsFuture, _activityFuture]).then(
-        (results) =>
-            (results[0] as List<Client>, results[1] as List<ActivityEvent>),
-      ),
+    return FutureBuilder<
+      (List<Client>, List<ActivityEvent>, List<DeletionRequest>)
+    >(
+      future:
+          Future.wait([
+            _clientsFuture,
+            _activityFuture,
+            _deletionRequestsFuture,
+          ]).then(
+            (results) => (
+              results[0] as List<Client>,
+              results[1] as List<ActivityEvent>,
+              results[2] as List<DeletionRequest>,
+            ),
+          ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -101,6 +116,7 @@ class _HomePageState extends State<HomePage> {
         }
         final clients = snapshot.data?.$1 ?? [];
         final activityEvents = snapshot.data?.$2 ?? [];
+        final deletionRequests = snapshot.data?.$3 ?? [];
 
         final recentActivities = activityEvents.map((event) {
           return HomeActivity(
@@ -119,9 +135,18 @@ class _HomePageState extends State<HomePage> {
             clients: clients,
             recentActivity: recentActivities,
             trainerName: AuthRepository.instance.currentUserLastName,
+            deletionRequests: deletionRequests,
             onAddClient: _openAddClient,
             onActivityResolved: _loadClients,
             onOpenClient: (id) => _openClientDetails(id),
+            onApproveDeletionRequest: (request) async {
+              await DeletionRequestRepository.instance.approveRequest(request);
+              await _loadClients();
+            },
+            onRejectDeletionRequest: (request) async {
+              await DeletionRequestRepository.instance.rejectRequest(request);
+              await _loadClients();
+            },
           ),
           PlansTab(clients: clients, onOpenClient: _openClientDetails),
           ClientsTab(

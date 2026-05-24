@@ -29,6 +29,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
   final _waistController = TextEditingController();
   final _hipsController = TextEditingController();
   final _chestController = TextEditingController();
+  final _coachSearchController = TextEditingController();
 
   static const _sexOptions = [
     'Not specified',
@@ -47,6 +48,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
   ];
 
   List<AppUserProfile> _coaches = [];
+  String _coachSearchQuery = '';
   String? _selectedCoachId;
   String? _assignedCoachId;
   String? _assignedCoachName;
@@ -238,6 +240,15 @@ class _ClientHomePageState extends State<ClientHomePage> {
     return null;
   }
 
+  List<AppUserProfile> get _filteredCoaches {
+    final query = _coachSearchQuery.trim().toLowerCase();
+    if (query.isEmpty) return _coaches;
+    return _coaches.where((coach) {
+      return coach.name.toLowerCase().contains(query) ||
+          coach.email.toLowerCase().contains(query);
+    }).toList();
+  }
+
   String? _validateRequired(String? value, String message) {
     return value == null || value.trim().isEmpty ? message : null;
   }
@@ -352,6 +363,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
     _waistController.dispose();
     _hipsController.dispose();
     _chestController.dispose();
+    _coachSearchController.dispose();
     super.dispose();
   }
 
@@ -602,8 +614,25 @@ class _ClientHomePageState extends State<ClientHomePage> {
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: Text('No coaches are available yet.'),
                       )
-                    else
-                      ..._coaches.map(_buildCoachOption),
+                    else ...[
+                      TextField(
+                        controller: _coachSearchController,
+                        onChanged: (value) =>
+                            setState(() => _coachSearchQuery = value),
+                        decoration: const InputDecoration(
+                          labelText: 'Search coaches',
+                          prefixIcon: Icon(Icons.search_rounded),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (_filteredCoaches.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Text('No coaches match your search.'),
+                        )
+                      else
+                        ..._filteredCoaches.map(_buildCoachOption),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 24),

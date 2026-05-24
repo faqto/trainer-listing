@@ -1,7 +1,7 @@
-import 'package:FitEd/helpers/edit_page_mixin.dart';
-import 'package:FitEd/widgets/shared/loading_overlay.dart';
-import 'package:FitEd/widgets/shared/page_error_view.dart';
-import 'package:FitEd/widgets/shared/page_loading_view.dart';
+import 'package:fit_ed/helpers/edit_page_mixin.dart';
+import 'package:fit_ed/widgets/shared/loading_overlay.dart';
+import 'package:fit_ed/widgets/shared/page_error_view.dart';
+import 'package:fit_ed/widgets/shared/page_loading_view.dart';
 import 'package:flutter/material.dart';
 
 abstract class EditPageBase<T extends StatefulWidget> extends State<T>

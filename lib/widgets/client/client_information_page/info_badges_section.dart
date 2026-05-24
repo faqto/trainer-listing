@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:FitEd/widgets/client/client_information_page/info_badge.dart';
+import 'package:fit_ed/widgets/client/client_information_page/info_badge.dart';
 import '../../../models/client_model.dart';
 import '../../../widgets/client/client_section_card.dart';
 

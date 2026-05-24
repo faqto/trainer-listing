@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:FitEd/widgets/register_page/register_field.dart';
-import 'package:FitEd/widgets/register_page/register_footer.dart';
-import 'package:FitEd/widgets/register_page/register_header.dart';
-import 'package:FitEd/widgets/register_page/register_password_field.dart';
-import 'package:FitEd/widgets/register_page/register_password_hint.dart';
-import 'package:FitEd/widgets/register_page/register_section_header.dart';
-import 'package:FitEd/widgets/register_page/register_submit_button.dart';
+import 'package:fit_ed/widgets/register_page/register_field.dart';
+import 'package:fit_ed/widgets/register_page/register_footer.dart';
+import 'package:fit_ed/widgets/register_page/register_header.dart';
+import 'package:fit_ed/widgets/register_page/register_password_field.dart';
+import 'package:fit_ed/widgets/register_page/register_password_hint.dart';
+import 'package:fit_ed/widgets/register_page/register_section_header.dart';
+import 'package:fit_ed/widgets/register_page/register_submit_button.dart';
 
 import '../../models/user_role.dart';
 import '../../routes/app_routes.dart';
@@ -302,7 +302,7 @@ class _RegisterPageState extends State<RegisterPage> {
         boxShadow: showError
             ? [
                 BoxShadow(
-                  color: const Color(0xFFEF4444).withOpacity(0.28),
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.28),
                   blurRadius: 16,
                   spreadRadius: 1,
                 ),

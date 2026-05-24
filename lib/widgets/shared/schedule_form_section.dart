@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../client/client_schedule_picker.dart';
+import '../clients/client_schedule_picker.dart';
 
 class ScheduleFormSection extends StatelessWidget {
   final List<String> selectedDays;

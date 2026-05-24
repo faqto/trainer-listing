@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:fit_ed/widgets/client/client_information_page/detail_block.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/detail_block.dart';
 import '../../../models/client_model.dart';
 import '../../../routes/app_routes.dart';
 import '../../../helpers/navigation_helper.dart';
-import '../../../widgets/client/client_section_card.dart';
-import '../../../widgets/client/client_section_title.dart';
+import '../client_section_card.dart';
+import '../client_section_title.dart';
 
 class FitnessRegimeSection extends StatelessWidget {
   final Client client;

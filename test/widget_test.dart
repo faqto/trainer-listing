@@ -16,8 +16,6 @@ void main() {
     ClientRepository.instance = _FakeClientRepository();
     ActivityRepository.instance = _FakeActivityRepository();
     DeletionRequestRepository.instance = _FakeDeletionRequestRepository();
-    await ClientRepository.instance.resetForTesting();
-    await DeletionRequestRepository.instance.resetForTesting();
   });
 
   testWidgets('signs in and shows the dashboard', (WidgetTester tester) async {

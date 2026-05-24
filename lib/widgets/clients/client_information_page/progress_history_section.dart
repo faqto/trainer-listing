@@ -1,8 +1,8 @@
-import 'package:fit_ed/widgets/client/client_information_page/progress_entry_card.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/progress_entry_card.dart';
 import 'package:flutter/material.dart';
 import '../../../models/client_model.dart';
-import '../../../widgets/client/client_section_card.dart';
-import '../../../widgets/client/client_section_title.dart';
+import '../client_section_card.dart';
+import '../client_section_title.dart';
 
 class ProgressHistorySection extends StatelessWidget {
   final List<ProgressEntry> progressEntries;

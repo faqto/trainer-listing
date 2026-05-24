@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_ed/widgets/shared/page_error_view.dart';
 import 'package:fit_ed/widgets/shared/page_loading_view.dart';
 import 'package:fit_ed/widgets/shared/page_save_button.dart';
-import 'package:fit_ed/widgets/client/edit_client_page/edit_client_form_fields.dart';
+import 'package:fit_ed/widgets/clients/edit_client_page/edit_client_form_fields.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
 import '../../helpers/client_page_helpers.dart';

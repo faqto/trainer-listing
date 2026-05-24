@@ -7,18 +7,15 @@ import '../../models/client_model.dart';
 import '../../widgets/home/client_card.dart';
 import '../../widgets/home/client_list_shimmer.dart';
 import '../../widgets/home/filter_dropdown.dart';
-import '../../widgets/home/pressable_scale.dart';
 import 'home_constants.dart';
 
 class ClientsTab extends StatefulWidget {
   final List<Client> clients;
-  final VoidCallback onAddClient;
   final ValueChanged<String> onOpenClient;
 
   const ClientsTab({
     super.key,
     required this.clients,
-    required this.onAddClient,
     required this.onOpenClient,
   });
 
@@ -110,23 +107,6 @@ class _ClientsTabState extends State<ClientsTab> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                PressableScale(
-                  onTap: widget.onAddClient,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    height: 56,
-                    width: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [primaryColor, Color(0xFF14B8A6)],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: premiumCardShadows,
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white),
                   ),
                 ),
               ],

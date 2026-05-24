@@ -54,13 +54,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _openAddClient() async {
-    final result = await Navigator.pushNamed(context, AppRoutes.addClient);
-    if (result == true) {
-      _loadClients();
-    }
-  }
-
   Future<void> _openClientDetails(String clientId) async {
     final result = await Navigator.pushNamed(
       context,
@@ -136,7 +129,6 @@ class _HomePageState extends State<HomePage> {
             recentActivity: recentActivities,
             trainerName: AuthRepository.instance.currentUserLastName,
             deletionRequests: deletionRequests,
-            onAddClient: _openAddClient,
             onActivityResolved: _loadClients,
             onOpenClient: (id) => _openClientDetails(id),
             onApproveDeletionRequest: (request) async {
@@ -149,11 +141,7 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           PlansTab(clients: clients, onOpenClient: _openClientDetails),
-          ClientsTab(
-            clients: clients,
-            onAddClient: _openAddClient,
-            onOpenClient: _openClientDetails,
-          ),
+          ClientsTab(clients: clients, onOpenClient: _openClientDetails),
           SettingsTab(onLogout: _logout),
         ];
 

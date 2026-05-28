@@ -6,7 +6,6 @@ import '../pages/auth/login_page.dart';
 import '../pages/auth/register_page.dart';
 import '../pages/client/client_fitness_page.dart';
 import '../pages/client/client_home_page.dart';
-import '../pages/clients/add_client_page.dart';
 import '../pages/clients/client_information_page.dart';
 import '../pages/clients/edit_fitness_regime_page.dart';
 import '../pages/clients/clients_list_page.dart';
@@ -27,7 +26,6 @@ class AppRoutes {
   static const String clientHome = '/client-home';
   static const String clientDetails = '/client-details';
   static const String clients = '/clients';
-  static const String addClient = '/clients/add';
   static const String clientInfo = '/clients/info';
   static const String editClient = '/clients/edit';
   static const String editRegime = '/clients/edit-regime';
@@ -100,7 +98,6 @@ class AppRoutes {
     clientHome: (context) => const ClientFitnessPage(),
     clientDetails: (context) => const ClientHomePage(),
     clients: (context) => const ClientsListPage(),
-    addClient: (context) => const AddClientPage(),
     clientInfo: (context) {
       final clientId = _clientIdFromRoute(context);
       if (clientId == null) {

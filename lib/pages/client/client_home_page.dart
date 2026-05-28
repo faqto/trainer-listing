@@ -7,7 +7,14 @@ import '../../models/client_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../services/user_repository.dart';
-import '../../widgets/client/client_schedule_picker.dart';
+import '../../widgets/client/client_home_page/assigned_coach_banner.dart';
+import '../../widgets/client/client_home_page/body_metrics_section.dart';
+import '../../widgets/client/client_home_page/choose_coach_button.dart';
+import '../../widgets/client/client_home_page/client_details_section.dart';
+import '../../widgets/client/client_home_page/coach_picker_section.dart';
+import '../../widgets/client/client_home_page/error_banner.dart';
+import '../../widgets/client/client_home_page/section_card.dart';
+import '../../widgets/clients/client_schedule_picker.dart';
 
 class ClientHomePage extends StatefulWidget {
   const ClientHomePage({super.key});
@@ -31,28 +38,12 @@ class _ClientHomePageState extends State<ClientHomePage> {
   final _chestController = TextEditingController();
   final _coachSearchController = TextEditingController();
 
-  static const _sexOptions = [
-    'Not specified',
-    'Female',
-    'Male',
-    'Nonbinary',
-    'Other',
-  ];
-  static const _customGoalOption = 'Customize';
-  static const _goalOptions = [
-    'Weight loss',
-    'Weight gain',
-    'Muscle gain',
-    'Muscle loss',
-    _customGoalOption,
-  ];
-
   List<AppUserProfile> _coaches = [];
   String _coachSearchQuery = '';
   String? _selectedCoachId;
   String? _assignedCoachId;
   String? _assignedCoachName;
-  String _selectedSex = _sexOptions.first;
+  String _selectedSex = ClientDetailsSection.sexOptions.first;
   String? _selectedGoal;
   final List<String> _selectedDays = [];
   TimeOfDay? _scheduleTime;
@@ -100,9 +91,9 @@ class _ClientHomePageState extends State<ClientHomePage> {
         _ageController.text = (profile?.age ?? 0) > 0
             ? profile!.age.toString()
             : '';
-        _selectedSex = _sexOptions.contains(profile?.sex)
+        _selectedSex = ClientDetailsSection.sexOptions.contains(profile?.sex)
             ? profile!.sex
-            : _sexOptions.first;
+            : ClientDetailsSection.sexOptions.first;
         _setSelectedGoal(profile?.goal ?? '');
         _setSelectedSchedule(profile?.schedule ?? '');
         _setMetricText(_weightController, profile?.weightKg ?? 0);
@@ -114,13 +105,11 @@ class _ClientHomePageState extends State<ClientHomePage> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Unable to load coaches. Please try again.';
-      });
+      setState(
+        () => _errorMessage = 'Unable to load coaches. Please try again.',
+      );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -157,7 +146,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
     setState(() => _isSaving = true);
 
     try {
-      final goal = _selectedGoal == _customGoalOption
+      final goal = _selectedGoal == ClientDetailsSection.customGoalOption
           ? 'Others: ${_goalController.text.trim()}'
           : _selectedGoal!;
       final schedule = formatScheduleDays(
@@ -249,65 +238,25 @@ class _ClientHomePageState extends State<ClientHomePage> {
     }).toList();
   }
 
-  String? _validateRequired(String? value, String message) {
-    return value == null || value.trim().isEmpty ? message : null;
-  }
-
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Please enter your email';
-    if (!email.contains('@')) return 'Enter a valid email';
-    return null;
-  }
-
-  String? _validateAge(String? value) {
-    final age = int.tryParse(value?.trim() ?? '');
-    if (age == null) return 'Please enter your age';
-    if (age < 16) return 'Minimum age is 16';
-    if (age > 75) return 'Maximum age is 75';
-    return null;
-  }
-
-  String? _validateMetric(
-    String? value,
-    String label, {
-    bool required = false,
-    double? max,
-  }) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) {
-      return required ? 'Please enter your $label' : null;
-    }
-
-    final metric = double.tryParse(text.replaceAll(',', '.'));
-    if (metric == null) return 'Enter a valid $label';
-    if (metric <= 0) return '$label must be greater than zero';
-    if (max != null && metric > max) return '$label looks too high';
-    return null;
-  }
-
   void _setSelectedGoal(String goal) {
-    final trimmedGoal = goal.trim();
-    if (trimmedGoal.isEmpty) {
+    final trimmed = goal.trim();
+    if (trimmed.isEmpty) {
       _selectedGoal = null;
       _goalController.clear();
       return;
     }
-
-    if (trimmedGoal.startsWith('Others:')) {
-      _selectedGoal = _customGoalOption;
-      _goalController.text = trimmedGoal.replaceFirst('Others:', '').trim();
+    if (trimmed.startsWith('Others:')) {
+      _selectedGoal = ClientDetailsSection.customGoalOption;
+      _goalController.text = trimmed.replaceFirst('Others:', '').trim();
       return;
     }
-
-    if (_goalOptions.contains(trimmedGoal)) {
-      _selectedGoal = trimmedGoal;
+    if (ClientDetailsSection.goalOptions.contains(trimmed)) {
+      _selectedGoal = trimmed;
       _goalController.clear();
       return;
     }
-
-    _selectedGoal = _customGoalOption;
-    _goalController.text = trimmedGoal;
+    _selectedGoal = ClientDetailsSection.customGoalOption;
+    _goalController.text = trimmed;
   }
 
   void _setSelectedSchedule(String schedule) {
@@ -316,38 +265,18 @@ class _ClientHomePageState extends State<ClientHomePage> {
       ..addAll(parseScheduleDays(schedule));
     _scheduleTime = parseScheduleTime(schedule);
     _scheduleError = null;
-
     final totalMinutes = parseScheduleDurationMinutes(schedule);
-    final hours = totalMinutes ~/ 60;
+    _durationHours = (totalMinutes ~/ 60).clamp(0, 4).toInt();
     final minutes = totalMinutes % 60;
-    _durationHours = hours.clamp(0, 4).toInt();
     _durationMinutes = const [0, 15, 30, 45].contains(minutes) ? minutes : 0;
   }
 
   void _setMetricText(TextEditingController controller, double value) {
-    controller.text = value > 0 ? _formatMetric(value) : '';
-  }
-
-  String _formatMetric(double value) {
-    return value == value.roundToDouble()
-        ? value.toStringAsFixed(0)
-        : value.toString();
-  }
-
-  Widget _metricField({
-    required TextEditingController controller,
-    required String label,
-    required String validationLabel,
-    bool required = false,
-    double? max,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(labelText: label),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      validator: (value) =>
-          _validateMetric(value, validationLabel, required: required, max: max),
-    );
+    controller.text = value > 0
+        ? (value == value.roundToDouble()
+              ? value.toStringAsFixed(0)
+              : value.toString())
+        : '';
   }
 
   @override
@@ -399,112 +328,32 @@ class _ClientHomePageState extends State<ClientHomePage> {
               children: [
                 if (_assignedCoachName != null &&
                     _assignedCoachName!.isNotEmpty)
-                  _AssignedCoachBanner(coachName: _assignedCoachName!),
+                  AssignedCoachBanner(coachName: _assignedCoachName!),
                 if (_errorMessage != null) ...[
-                  _ErrorBanner(message: _errorMessage!, onRetry: _load),
+                  ErrorBanner(message: _errorMessage!, onRetry: _load),
                   const SizedBox(height: 16),
                 ],
-                _SectionCard(
-                  title: 'Your Details',
-                  icon: Icons.assignment_ind_outlined,
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Full Name'),
-                      validator: (value) =>
-                          _validateRequired(value, 'Please enter your name'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: _validateEmail,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(labelText: 'Phone'),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) => _validateRequired(
-                        value,
-                        'Please enter your phone number',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _ageController,
-                            decoration: const InputDecoration(labelText: 'Age'),
-                            keyboardType: TextInputType.number,
-                            validator: _validateAge,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _selectedSex,
-                            decoration: const InputDecoration(
-                              labelText: 'Gender',
-                            ),
-                            items: _sexOptions
-                                .map(
-                                  (sex) => DropdownMenuItem(
-                                    value: sex,
-                                    child: Text(sex),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) => setState(
-                              () => _selectedSex = value ?? _sexOptions.first,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedGoal,
-                      decoration: const InputDecoration(
-                        labelText: 'Fitness Goal',
-                      ),
-                      items: _goalOptions
-                          .map(
-                            (goal) => DropdownMenuItem(
-                              value: goal,
-                              child: Text(goal),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) => setState(() {
-                        _selectedGoal = value;
-                        if (value != _customGoalOption) {
-                          _goalController.clear();
-                        }
-                      }),
-                      validator: (value) => value == null
-                          ? 'Please select your fitness goal'
-                          : null,
-                    ),
-                    if (_selectedGoal == _customGoalOption) ...[
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _goalController,
-                        decoration: const InputDecoration(
-                          labelText: 'Custom Fitness Goal',
-                        ),
-                        validator: (value) => _validateRequired(
-                          value,
-                          'Please enter your fitness goal',
-                        ),
-                      ),
-                    ],
-                  ],
+                ClientDetailsSection(
+                  nameController: _nameController,
+                  emailController: _emailController,
+                  phoneController: _phoneController,
+                  ageController: _ageController,
+                  goalController: _goalController,
+                  selectedSex: _selectedSex,
+                  selectedGoal: _selectedGoal,
+                  onSexChanged: (value) => setState(
+                    () => _selectedSex =
+                        value ?? ClientDetailsSection.sexOptions.first,
+                  ),
+                  onGoalChanged: (value) => setState(() {
+                    _selectedGoal = value;
+                    if (value != ClientDetailsSection.customGoalOption) {
+                      _goalController.clear();
+                    }
+                  }),
                 ),
                 const SizedBox(height: 16),
-                _SectionCard(
+                SectionCard(
                   title: 'Preferred Schedule',
                   icon: Icons.event_available_outlined,
                   children: [
@@ -531,327 +380,36 @@ class _ClientHomePageState extends State<ClientHomePage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _SectionCard(
-                  title: 'Body Metrics',
-                  icon: Icons.monitor_weight_outlined,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _metricField(
-                            controller: _weightController,
-                            label: 'Weight (kg)',
-                            validationLabel: 'weight',
-                            required: true,
-                            max: 500,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _metricField(
-                            controller: _heightController,
-                            label: 'Height (cm)',
-                            validationLabel: 'height',
-                            required: true,
-                            max: 300,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _metricField(
-                            controller: _bodyFatController,
-                            label: 'Body Fat (%)',
-                            validationLabel: 'body fat',
-                            max: 100,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _metricField(
-                            controller: _waistController,
-                            label: 'Waist (cm)',
-                            validationLabel: 'waist',
-                            max: 300,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _metricField(
-                            controller: _hipsController,
-                            label: 'Hips (cm)',
-                            validationLabel: 'hips',
-                            max: 300,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _metricField(
-                            controller: _chestController,
-                            label: 'Chest (cm)',
-                            validationLabel: 'chest',
-                            max: 300,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                BodyMetricsSection(
+                  weightController: _weightController,
+                  heightController: _heightController,
+                  bodyFatController: _bodyFatController,
+                  waistController: _waistController,
+                  hipsController: _hipsController,
+                  chestController: _chestController,
                 ),
                 const SizedBox(height: 16),
-                _SectionCard(
-                  title: 'Available Coaches',
-                  icon: Icons.sports_outlined,
-                  children: [
-                    if (_coaches.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('No coaches are available yet.'),
-                      )
-                    else ...[
-                      TextField(
-                        controller: _coachSearchController,
-                        onChanged: (value) =>
-                            setState(() => _coachSearchQuery = value),
-                        decoration: const InputDecoration(
-                          labelText: 'Search coaches',
-                          prefixIcon: Icon(Icons.search_rounded),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (_filteredCoaches.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Text('No coaches match your search.'),
-                        )
-                      else
-                        ..._filteredCoaches.map(_buildCoachOption),
-                    ],
-                  ],
+                CoachPickerSection(
+                  coaches: _coaches,
+                  filteredCoaches: _filteredCoaches,
+                  selectedCoachId: _selectedCoachId,
+                  searchController: _coachSearchController,
+                  onSearchChanged: (value) =>
+                      setState(() => _coachSearchQuery = value),
+                  onCoachSelected: (id) =>
+                      setState(() => _selectedCoachId = id),
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isSaving || _coaches.isEmpty
-                        ? null
-                        : _chooseCoach,
-                    icon: _isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.check_circle_outline),
-                    label: Text(
-                      _assignedCoachId == _selectedCoachId
-                          ? 'Update Details'
-                          : 'Choose Coach',
-                    ),
-                  ),
+                ChooseCoachButton(
+                  isSaving: _isSaving,
+                  hasCoaches: _coaches.isNotEmpty,
+                  isUpdating: _assignedCoachId == _selectedCoachId,
+                  onPressed: _chooseCoach,
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCoachOption(AppUserProfile coach) {
-    final selected = coach.id == _selectedCoachId;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => setState(() => _selectedCoachId = coach.id),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected
-                  ? const Color(0xFF2563EB)
-                  : const Color(0xFFE2E8F0),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: selected
-                    ? const Color(0xFF1E40AF)
-                    : const Color(0xFFCBD5E1),
-                child: Text(
-                  coach.name.isEmpty ? '?' : coach.name[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      coach.name.isEmpty ? 'Coach' : coach.name,
-                      style: const TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      coach.email.isEmpty ? 'No email listed' : coach.email,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Color(0xFF64748B)),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: selected
-                    ? const Color(0xFF2563EB)
-                    : const Color(0xFF94A3B8),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final List<Widget> children;
-
-  const _SectionCard({
-    required this.title,
-    required this.icon,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F0F172A),
-            blurRadius: 24,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: const Color(0xFF1E40AF)),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
-      ),
-    );
-  }
-}
-
-class _AssignedCoachBanner extends StatelessWidget {
-  final String coachName;
-
-  const _AssignedCoachBanner({required this.coachName});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFECFDF5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFA7F3D0)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.verified_outlined, color: Color(0xFF047857)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Connected with $coachName',
-              style: const TextStyle(
-                color: Color(0xFF065F46),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorBanner({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F2),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDA4AF)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Color(0xFFBE123C)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: Color(0xFF9F1239)),
-            ),
-          ),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
       ),
     );
   }

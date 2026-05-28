@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fit_ed/helpers/client_page_helpers.dart';
-import 'package:fit_ed/widgets/client/client_information_page/action_buttons.dart';
-import 'package:fit_ed/widgets/client/client_information_page/body_metrics_section.dart';
-import 'package:fit_ed/widgets/client/client_information_page/contact_details_section.dart';
-import 'package:fit_ed/widgets/client/client_information_page/fitness_regime_section.dart';
-import 'package:fit_ed/widgets/client/client_information_page/info_badges_section.dart';
-import 'package:fit_ed/widgets/client/client_information_page/notes_section.dart';
-import 'package:fit_ed/widgets/client/client_information_page/progress_history_section.dart';
-import 'package:fit_ed/widgets/client/client_information_page/progress_summary_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/action_buttons.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/body_metrics_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/contact_details_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/fitness_regime_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/info_badges_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/notes_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/progress_history_section.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/progress_summary_section.dart';
 import 'package:fit_ed/widgets/shared/page_error_view.dart';
 import '../../models/client_model.dart';
 import '../../services/client_repository.dart';
-import '../../widgets/client/client_sliver_app_bar.dart';
+import '../../widgets/clients/client_sliver_app_bar.dart';
 
 class ClientInformationPage extends StatefulWidget {
   final String clientId;

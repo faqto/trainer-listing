@@ -9,9 +9,9 @@ import '../../routes/app_routes.dart';
 import '../../services/auth_repository.dart';
 import '../../services/deletion_request_repository.dart';
 import '../../services/user_repository.dart';
-import '../../widgets/client/client_information_page/progress_entry_card.dart';
-import '../../widgets/client/client_section_card.dart';
-import '../../widgets/client/client_section_title.dart';
+import '../../widgets/clients/client_information_page/progress_entry_card.dart';
+import '../../widgets/clients/client_section_card.dart';
+import '../../widgets/clients/client_section_title.dart';
 import '../home/settings_tab.dart';
 import 'client_home_page.dart';
 

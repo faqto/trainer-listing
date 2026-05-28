@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/client_model.dart';
-import '../../../widgets/client/client_section_card.dart';
-import '../../../widgets/client/client_section_title.dart';
+import '../client_section_card.dart';
+import '../client_section_title.dart';
 
 class NotesSection extends StatelessWidget {
   final Client client;

@@ -10,15 +10,9 @@ abstract class ClientRepository {
 
   Future<Client?> getById(String id);
 
-  Future<void> addClient(Client client);
-
   Future<void> updateClient(Client client);
 
   Future<void> deleteClient(String id);
-
-  Future<void> resetForTesting();
-
-  String createClientId();
 }
 
 class FirestoreClientRepository implements ClientRepository {
@@ -55,11 +49,6 @@ class FirestoreClientRepository implements ClientRepository {
   }
 
   @override
-  Future<void> addClient(Client client) async {
-    await _clientsCollection.doc(client.id).set(client.toMap());
-  }
-
-  @override
   Future<void> updateClient(Client client) async {
     await _clientsCollection.doc(client.id).update(client.toMap());
   }
@@ -67,13 +56,5 @@ class FirestoreClientRepository implements ClientRepository {
   @override
   Future<void> deleteClient(String id) async {
     await _clientsCollection.doc(id).delete();
-  }
-
-  @override
-  Future<void> resetForTesting() async {}
-
-  @override
-  String createClientId() {
-    return _clientsCollection.doc().id;
   }
 }

@@ -57,9 +57,7 @@ class _ClientsListPageState extends State<ClientsListPage> {
           }
           final clients = snapshot.data ?? [];
           if (clients.isEmpty) {
-            return const Center(
-              child: Text('No clients yet. Add a client to get started.'),
-            );
+            return const Center(child: Text('No clients yet.'));
           }
           return ListView.separated(
             itemCount: clients.length,
@@ -138,18 +136,6 @@ class _ClientsListPageState extends State<ClientsListPage> {
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.pushNamed(
-            context,
-            AppRoutes.addClient,
-          );
-          if (result == true) {
-            _refreshClients();
-          }
-        },
-        child: const Icon(Icons.person_add),
       ),
     );
   }

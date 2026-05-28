@@ -24,8 +24,6 @@ abstract class DeletionRequestRepository {
   Future<void> approveRequest(DeletionRequest request);
 
   Future<void> rejectRequest(DeletionRequest request);
-
-  Future<void> resetForTesting();
 }
 
 class FirestoreDeletionRequestRepository implements DeletionRequestRepository {
@@ -121,7 +119,4 @@ class FirestoreDeletionRequestRepository implements DeletionRequestRepository {
       'resolvedAt': FieldValue.serverTimestamp(),
     });
   }
-
-  @override
-  Future<void> resetForTesting() async {}
 }

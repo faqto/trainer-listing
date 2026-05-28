@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fit_ed/widgets/client/client_information_page/info_badge.dart';
+import 'package:fit_ed/widgets/clients/client_information_page/info_badge.dart';
 import '../../../models/client_model.dart';
-import '../../../widgets/client/client_section_card.dart';
+import '../client_section_card.dart';
 
 class InfoBadgesSection extends StatelessWidget {
   final Client client;
